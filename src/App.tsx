@@ -49,7 +49,9 @@ function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Pa
 }
 
 function Topbar({ title, setPage }: { title: string; setPage: (p:Page)=>void }) {
-  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><button className="credit-pill" onClick={()=>setPage("planos")}><b>20</b> créditos <span>+</span></button></header>;
+  const [creditos,setCreditos]=useState(20);
+  useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[]);
+  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><button className="credit-pill" onClick={()=>setPage("planos")}><b>{creditos}</b> créditos <span>+</span></button></header>;
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
@@ -79,10 +81,20 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
  const search=async()=>{
    setLoading(true); setError("");
    const term=query.trim();
+   if(!term){ setError("Digite um tema, técnica ou princípio para pesquisar."); setSearched(false); setLoading(false); return; }
+
+   const {data:consumo,error:consumoError}=await supabase.rpc("consumir_credito_e_registrar_pesquisa",{p_consulta:term,p_resultados:0});
+   if(consumoError){
+     if(consumoError.message?.includes("CRÉDITOS_INSUFICIENTES")) setError("Você ficou sem créditos. Escolha um plano para continuar pesquisando.");
+     else setError("Não foi possível iniciar a pesquisa agora.");
+     setItems([]); setSearched(false); setLoading(false); return;
+   }
+   const pesquisaId=consumo?.pesquisa_id as string | undefined;
+
    let request=supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id,paginas(numero_pagina),livros(titulo,autor)");
-   if(term) request=request.or("titulo.ilike.%"+term+"%,tema.ilike.%"+term+"%,trecho.ilike.%"+term+"%,conteudo.ilike.%"+term+"%");
+   request=request.or("titulo.ilike.%"+term+"%,tema.ilike.%"+term+"%,trecho.ilike.%"+term+"%,conteudo.ilike.%"+term+"%");
    const {data,error}=await request.order("relevancia",{ascending:false,nullsLast:true}).limit(40);
-   if(error){ setError("Não foi possível carregar os conhecimentos agora."); setItems([]); }
+   if(error){ setError("A pesquisa foi registrada, mas não foi possível carregar os conhecimentos."); setItems([]); }
    else {
      const mapped=(data||[]).map((r:any)=>({
        id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,
@@ -90,8 +102,7 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
        pagina:r.paginas?.numero_pagina ?? null, livro:r.livros?.titulo ?? "Livro não informado", autor:r.livros?.autor ?? "Autor não informado"
      }));
      setItems(mapped);
-     const {data:{user}}=await supabase.auth.getUser();
-     if(user && term) await supabase.from("pesquisas").insert({usuario_id:user.id,consulta:term,resultados:mapped.length,credito_consumido:false});
+     if(pesquisaId) await supabase.from("pesquisas").update({resultados:mapped.length}).eq("id",pesquisaId);
    }
    setSearched(true); setLoading(false);
  };
@@ -123,11 +134,27 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
 
 function Selecionados({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void}) {
  const [copied,setCopied]=useState(false);
+ const [loading,setLoading]=useState(true);
+
+ useEffect(()=>{(async()=>{
+   const {data:{user}}=await supabase.auth.getUser();
+   if(!user){setLoading(false);return;}
+   const {data,error}=await supabase.from("selecoes").select("id,conhecimento_id,criado_em,conhecimentos(id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id,paginas(numero_pagina),livros(titulo,autor))").eq("usuario_id",user.id).order("criado_em",{ascending:false});
+   if(!error){
+     const mapped=(data||[]).map((x:any)=>{const r=x.conhecimentos;return r?{id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,analise_aplicacao:r.analise_aplicacao,relevancia:r.relevancia,pagina:r.paginas?.numero_pagina??null,livro:r.livros?.titulo??"Livro não informado",autor:r.livros?.autor??"Autor não informado"}:null}).filter(Boolean) as Knowledge[];
+     setSelected(mapped);
+   }
+   setLoading(false);
+ })()},[setSelected]);
+
  const copySelected=async()=>{ const text=selected.map((r,i)=>["["+(i+1)+"] "+(r.titulo||r.tema||"Conhecimento"),"Tipo: "+(r.tipo||"Conhecimento"),"Livro: "+r.livro,"Autor: "+r.autor,"Página: "+(r.pagina??"não informada"),"Trecho: “"+(r.trecho||r.conteudo||"")+"”","Nota de aplicação: "+(r.analise_aplicacao||"não informada")].join("\n")).join("\n\n"); try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),1800); } catch {} };
+ const clear=async()=>{const {data:{user}}=await supabase.auth.getUser();if(user) await supabase.from("selecoes").delete().eq("usuario_id",user.id);setSelected([]);};
+ const remove=async(id:string)=>{const {data:{user}}=await supabase.auth.getUser();if(user) await supabase.from("selecoes").delete().eq("usuario_id",user.id).eq("conhecimento_id",id);setSelected(selected.filter(x=>x.id!==id));};
+
  return <div className="content"><section className="section-intro"><div><span className="eyebrow">SUA CURADORIA</span><h2>Conhecimentos selecionados.</h2><p>Revise, organize e copie os conhecimentos que você quer levar para o seu trabalho.</p></div></section>
- {selected.length===0 ? <section className="empty-selection"><div className="empty-mark">□</div><h2>Nenhum conhecimento selecionado</h2><p>Durante uma pesquisa, clique nos conhecimentos que deseja guardar. Eles aparecerão aqui para revisão e cópia.</p><button className="primary-large" onClick={()=>setPage("pesquisa")}>Voltar para pesquisa <b>→</b></button></section> :
- <><div className="selected-actions"><span><b>{selected.length}</b> conhecimento{selected.length!==1?"s":""}</span><div><button className="secondary-action" onClick={()=>setSelected([])}>Limpar seleção</button><button className="primary-large" onClick={copySelected}>{copied?"Copiado ✓":"Copiar conhecimentos"}</button></div></div>
- <div className="results-list">{selected.map(r=><article className="knowledge-card selected" key={r.id}><div className="check">✓</div><div className="knowledge-main"><div className="knowledge-meta"><span>{r.tipo||"CONHECIMENTO"}</span><span>•</span><span>{r.livro}</span>{r.pagina&&<><span>•</span><span>p. {r.pagina}</span></>}</div><h3>{r.titulo||r.tema||"Conhecimento"}</h3><p className="excerpt">“{r.trecho||r.conteudo||""}”</p>{r.analise_aplicacao&&<div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.analise_aplicacao}</span></div>}<small>{r.autor}</small></div><button className="remove-selected" onClick={()=>setSelected(selected.filter(x=>x.id!==r.id))}>×</button></article>)}</div></>}
+ {loading?<section className="empty-selection"><h2>Carregando seleção...</h2><p>Recuperando seus conhecimentos salvos.</p></section>:selected.length===0 ? <section className="empty-selection"><div className="empty-mark">□</div><h2>Nenhum conhecimento selecionado</h2><p>Durante uma pesquisa, clique nos conhecimentos que deseja guardar. Eles aparecerão aqui para revisão e cópia.</p><button className="primary-large" onClick={()=>setPage("pesquisa")}>Voltar para pesquisa <b>→</b></button></section> :
+ <><div className="selected-actions"><span><b>{selected.length}</b> conhecimento{selected.length!==1?"s":""}</span><div><button className="secondary-action" onClick={clear}>Limpar seleção</button><button className="primary-large" onClick={copySelected}>{copied?"Copiado ✓":"Copiar conhecimentos"}</button></div></div>
+ <div className="results-list">{selected.map(r=><article className="knowledge-card selected" key={r.id}><div className="check">✓</div><div className="knowledge-main"><div className="knowledge-meta"><span>{r.tipo||"CONHECIMENTO"}</span><span>•</span><span>{r.livro}</span>{r.pagina&&<><span>•</span><span>p. {r.pagina}</span></>}</div><h3>{r.titulo||r.tema||"Conhecimento"}</h3><p className="excerpt">“{r.trecho||r.conteudo||""}”</p>{r.analise_aplicacao&&<div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.analise_aplicacao}</span></div>}<small>{r.autor}</small></div><button className="remove-selected" onClick={()=>remove(r.id)}>×</button></article>)}</div></>}
  </div>;
 }
 
