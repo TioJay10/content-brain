@@ -12,6 +12,21 @@ const results = [
   { id: 3, type: "NEGÓCIOS", title: "Conheça profundamente seu cliente", book: "Biblioteca de negócios", author: "Biblioteca Content Brain", page: 88, excerpt: "Compreender necessidades reais muda a qualidade das decisões comerciais.", note: "Ajuda a construir perguntas melhores e propostas mais relevantes." }
 ];
 
+
+type Knowledge = {
+  id: string;
+  titulo: string | null;
+  tipo: string | null;
+  tema: string | null;
+  trecho: string | null;
+  conteudo: string | null;
+  analise_aplicacao: string | null;
+  relevancia: number | null;
+  pagina: number | null;
+  livro: string;
+  autor: string;
+};
+
 function Logo() {
   return <div className="app-logo"><span>content</span><b>brain</b></div>;
 }
@@ -54,22 +69,62 @@ function Dashboard({setPage}:{setPage:(p:Page)=>void}) {
  </div>
 }
 
-function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:typeof results; setSelected:(items:typeof results)=>void}) {
- const toggle=(item:typeof results[number])=>{ setSelected(selected.some(x=>x.id===item.id) ? selected.filter(x=>x.id!==item.id) : [...selected,item]); };
- return <div className="content"><section className="search-page-head"><div className="search-input-large"><span>⌕</span><span>Técnicas de vendas</span><button>×</button></div><span className="result-count">40 conhecimentos encontrados</span></section>
- <div className="results-toolbar"><span>Resultados relevantes</span><div><button>Filtrar</button><button>Mais relevantes⌄</button></div></div>
- <div className="results-list">{results.map(r=><article className={selected.some(x=>x.id===r.id)?"knowledge-card selected":"knowledge-card"} key={r.id} onClick={()=>toggle(r)}><div className="check">{selected.some(x=>x.id===r.id)?"✓":""}</div><div className="knowledge-main"><div className="knowledge-meta"><span>{r.type}</span><span>•</span><span>{r.book}</span><span>•</span><span>p. {r.page}</span></div><h3>{r.title}</h3><p className="excerpt">“{r.excerpt}”</p><div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.note}</span></div><small>{r.author}</small></div><span className="card-arrow">↗</span></article>)}</div>
- <div className="more-results"><button onClick={()=>setPage("pesquisa")}>+ Procurar mais resultados</button><span>{selected.length} selecionado{selected.length!==1?"s":""}</span></div>
- {selected.length>0 && <div className="selection-bar"><span><b>{selected.length}</b> conhecimentos selecionados</span><button onClick={()=>setPage("selecionados")}>Revisar seleção →</button></div>}</div>;
+function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void}) {
+ const [query,setQuery]=useState("Técnicas de vendas");
+ const [items,setItems]=useState<Knowledge[]>([]);
+ const [loading,setLoading]=useState(false);
+ const [searched,setSearched]=useState(false);
+ const [error,setError]=useState("");
+ const search=async()=>{
+   setLoading(true); setError("");
+   const term=query.trim();
+   let request=supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id,paginas(numero_pagina),livros(titulo,autor)");
+   if(term) request=request.or("titulo.ilike.%"+term+"%,tema.ilike.%"+term+"%,trecho.ilike.%"+term+"%,conteudo.ilike.%"+term+"%");
+   const {data,error}=await request.order("relevancia",{ascending:false,nullsLast:true}).limit(40);
+   if(error){ setError("Não foi possível carregar os conhecimentos agora."); setItems([]); }
+   else {
+     const mapped=(data||[]).map((r:any)=>({
+       id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,
+       analise_aplicacao:r.analise_aplicacao,relevancia:r.relevancia,
+       pagina:r.paginas?.numero_pagina ?? null, livro:r.livros?.titulo ?? "Livro não informado", autor:r.livros?.autor ?? "Autor não informado"
+     }));
+     setItems(mapped);
+   }
+   setSearched(true); setLoading(false);
+ };
+ return <div className="content">
+   <section className="search-page-head">
+     <div className="search-input-large"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")search()}} placeholder="Digite um tema, técnica ou princípio..." /><button onClick={()=>{setQuery("");setItems([]);setSearched(false)}}>×</button></div>
+     <button className="primary-large" onClick={search}>{loading?"Buscando...":"Pesquisar"}</button>
+   </section>
+   <div className="results-toolbar"><span>{searched ? items.length+" conhecimentos encontrados" : "Pesquise na biblioteca"}</span><div><button>Filtrar</button><button>Mais relevantes⌄</button></div></div>
+   {error && <div className="search-error">{error}</div>}
+   {!searched && <section className="search-empty"><div className="empty-mark">⌕</div><h2>O que você quer aprender?</h2><p>Digite um tema, técnica ou princípio para encontrar conhecimentos organizados na biblioteca.</p></section>}
+   {searched && !loading && items.length===0 && !error && <section className="search-empty"><div className="empty-mark">○</div><h2>Nenhum conhecimento encontrado</h2><p>Não encontramos resultados para “{query}”. Tente outro termo ou uma expressão mais curta.</p></section>}
+   {loading && <div className="search-empty"><h2>Consultando a biblioteca...</h2><p>Estamos buscando nos conhecimentos cadastrados no Supabase.</p></div>}
+   <div className="results-list">{items.map(r=>{
+     const isSelected=selected.some(x=>x.id===r.id);
+     return <article className={isSelected?"knowledge-card selected":"knowledge-card"} key={r.id} onClick={()=>setSelected(isSelected?selected.filter(x=>x.id!==r.id):[...selected,r])}>
+       <div className="check">{isSelected?"✓":""}</div><div className="knowledge-main">
+         <div className="knowledge-meta"><span>{r.tipo||"CONHECIMENTO"}</span><span>•</span><span>{r.livro}</span>{r.pagina&&<><span>•</span><span>p. {r.pagina}</span></>}</div>
+         <h3>{r.titulo||r.tema||"Conhecimento"}</h3><p className="excerpt">“{r.trecho||r.conteudo||"Conteúdo não informado."}”</p>
+         {r.analise_aplicacao&&<div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.analise_aplicacao}</span></div>}
+         <small>{r.autor}</small>
+       </div><span className="card-arrow">↗</span>
+     </article>
+   })}</div>
+   {searched && items.length>0 && <div className="more-results"><button onClick={search}>+ Procurar mais resultados</button><span>{selected.length} selecionado{selected.length!==1?"s":""}</span></div>}
+   {selected.length>0 && <div className="selection-bar"><span><b>{selected.length}</b> conhecimentos selecionados</span><button onClick={()=>setPage("selecionados")}>Revisar seleção →</button></div>}
+ </div>;
 }
 
-function Selecionados({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:typeof results; setSelected:(items:typeof results)=>void}) {
+function Selecionados({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void}) {
  const [copied,setCopied]=useState(false);
- const copySelected=async()=>{ const text=selected.map((r,i)=>["["+(i+1)+"] "+r.title,"Tipo: "+r.type,"Livro: "+r.book,"Autor: "+r.author,"Página: "+r.page,"Trecho: “"+r.excerpt+"”","Nota de aplicação: "+r.note].join("\n")).join("\n\n"); try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),1800); } catch {} };
+ const copySelected=async()=>{ const text=selected.map((r,i)=>["["+(i+1)+"] "+(r.titulo||r.tema||"Conhecimento"),"Tipo: "+(r.tipo||"Conhecimento"),"Livro: "+r.livro,"Autor: "+r.autor,"Página: "+(r.pagina??"não informada"),"Trecho: “"+(r.trecho||r.conteudo||"")+"”","Nota de aplicação: "+(r.analise_aplicacao||"não informada")].join("\n")).join("\n")).join("\n\n"); try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),1800); } catch {} };
  return <div className="content"><section className="section-intro"><div><span className="eyebrow">SUA CURADORIA</span><h2>Conhecimentos selecionados.</h2><p>Revise, organize e copie os conhecimentos que você quer levar para o seu trabalho.</p></div></section>
  {selected.length===0 ? <section className="empty-selection"><div className="empty-mark">□</div><h2>Nenhum conhecimento selecionado</h2><p>Durante uma pesquisa, clique nos conhecimentos que deseja guardar. Eles aparecerão aqui para revisão e cópia.</p><button className="primary-large" onClick={()=>setPage("pesquisa")}>Voltar para pesquisa <b>→</b></button></section> :
  <><div className="selected-actions"><span><b>{selected.length}</b> conhecimento{selected.length!==1?"s":""}</span><div><button className="secondary-action" onClick={()=>setSelected([])}>Limpar seleção</button><button className="primary-large" onClick={copySelected}>{copied?"Copiado ✓":"Copiar conhecimentos"}</button></div></div>
- <div className="results-list">{selected.map(r=><article className="knowledge-card selected" key={r.id}><div className="check">✓</div><div className="knowledge-main"><div className="knowledge-meta"><span>{r.type}</span><span>•</span><span>{r.book}</span><span>•</span><span>p. {r.page}</span></div><h3>{r.title}</h3><p className="excerpt">“{r.excerpt}”</p><div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.note}</span></div><small>{r.author}</small></div><button className="remove-selected" onClick={()=>setSelected(selected.filter(x=>x.id!==r.id))}>×</button></article>)}</div></>}
+ <div className="results-list">{selected.map(r=><article className="knowledge-card selected" key={r.id}><div className="check">✓</div><div className="knowledge-main"><div className="knowledge-meta"><span>{r.tipo||"CONHECIMENTO"}</span><span>•</span><span>{r.livro}</span>{r.pagina&&<><span>•</span><span>p. {r.pagina}</span></>}</div><h3>{r.titulo||r.tema||"Conhecimento"}</h3><p className="excerpt">“{r.trecho||r.conteudo||""}”</p>{r.analise_aplicacao&&<div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.analise_aplicacao}</span></div>}<small>{r.autor}</small></div><button className="remove-selected" onClick={()=>setSelected(selected.filter(x=>x.id!==r.id))}>×</button></article>)}</div></>}
  </div>;
 }
 
@@ -93,7 +148,7 @@ export default function App(){
  const [mode,setMode]=useState<"landing"|"user"|"admin">("landing");
  const [page,setPage]=useState<Page>("dashboard");
  const [modal,setModal]=useState<"login"|"signup"|null>(null);
- const [selected,setSelected]=useState<typeof results>([]);
+ const [selected,setSelected]=useState<Knowledge[]>([]);
  void supabase.auth.getSession();
  const open=(t:"login"|"signup")=>setModal(t);
  if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}<button className="dev-preview" onClick={()=>{setMode("user");setPage("dashboard")}}>Pré-visualizar app</button></>;
