@@ -270,13 +270,13 @@ export default function App(){
    return ()=>{active=false;subscription.unsubscribe();};
  },[]);
 
- if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}</>;
+ if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} switchType={(next)=>setModal(next)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}</>;
  if(mode==="admin") return <AdminLayout page={page} setPage={setPage}>{page==="admin"?<Admin setPage={setPage}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
  return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="selecionados"?<Selecionados setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
 }
 
 
-function AuthModal({type,close,onEnter}:{type:"login"|"signup";close:()=>void;onEnter:(admin:boolean)=>void}){
+function AuthModal({type,close,switchType,onEnter}:{type:"login"|"signup";close:()=>void;switchType:(type:"login"|"signup")=>void;onEnter:(admin:boolean)=>void}){
  const signup=type==="signup";
  const [email,setEmail]=useState("");
  const [password,setPassword]=useState("");
@@ -315,8 +315,8 @@ function AuthModal({type,close,onEnter}:{type:"login"|"signup";close:()=>void;on
    <label>Senha<input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="••••••••"/></label>
    {error&&<div className="search-error">{error}</div>}
    <button className="btn btn-primary full" disabled={loading} onClick={submit}>{loading?"Entrando...":signup?"Criar conta":"Entrar"} <span>→</span></button>
-   {!signup&&<><div className="oauth-divider"><span>ou</span></div><button className="google-login" disabled={loading} onClick={async()=>{setLoading(true);setError("");const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});if(error)setError(error.message);setLoading(false);}}><span className="google-mark">G</span> Continuar com Google</button></>}
-   <small>{signup?"Já tem uma conta? ":"Ainda não tem uma conta? "}<button className="switch" onClick={close}>{signup?"Fazer login":"Cadastre-se"}</button></small>
+   <><div className="oauth-divider"><span>ou</span></div><button className="google-login" disabled={loading} onClick={async()=>{setLoading(true);setError("");const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});if(error)setError(error.message);setLoading(false);}}><span className="google-mark">G</span> Continuar com Google</button></>
+   <small>{signup?"Já tem uma conta? ":"Ainda não tem uma conta? "}<button className="switch" onClick={()=>switchType(signup?"login":"signup")}>{signup?"Fazer login":"Cadastre-se"}</button></small>
  </div></div>;
 }
 
