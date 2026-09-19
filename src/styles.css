@@ -1230,3 +1230,15 @@
   box-shadow:0 0 0 2px #dc262622;
   outline:none;
 }
+
+
+/* QTD — BORDA VERMELHA TAMBÉM NO MODO NOTURNO */
+:root[data-theme="dark"] .table-placeholder .admin-user-actions .credit-add-group input{
+  border:1px solid #dc2626 !important;
+  border-color:#dc2626 !important;
+}
+:root[data-theme="dark"] .table-placeholder .admin-user-actions .credit-add-group input:focus{
+  border-color:#dc2626 !important;
+  box-shadow:0 0 0 2px #dc262622 !important;
+  outline:none !important;
+}
