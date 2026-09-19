@@ -51,7 +51,7 @@ function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Pa
 function Topbar({ title, setPage }: { title: string; setPage: (p:Page)=>void }) {
   const [creditos,setCreditos]=useState(20);
   useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[]);
-  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><button className="credit-pill" onClick={()=>setPage("planos")}><b>{creditos}</b> créditos <span>+</span></button></header>;
+  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button></header>;
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
@@ -226,6 +226,9 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  const [processing,setProcessing]=useState<string|null>(null);
  const [progress,setProgress]=useState<Record<string,{done:number,total:number}>>({});
  const [message,setMessage]=useState(""); const [rows,setRows]=useState<any[]>([]); const [rowsLoading,setRowsLoading]=useState(false); const [saving,setSaving]=useState<string|null>(null); const [assinaturas,setAssinaturas]=useState<any[]>([]);
+ const [showUserForm,setShowUserForm]=useState(false);
+ const [newUser,setNewUser]=useState({nome:"",email:"",password:"",plano:"gratuito",creditos:20});
+ const [userActionLoading,setUserActionLoading]=useState(false);
 
  const loadLivros=async()=>{
    setLoading(true);
@@ -298,9 +301,54 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
 
  const cfg={conhecimentos:["CONHECIMENTOS","Base de conhecimento","Revise e organize os conhecimentos extraídos."],usuarios:["USUÁRIOS","Usuários cadastrados","Gerencie contas, créditos e planos."]}[type];
  const updateUser=async(id:string,patch:any)=>{setSaving(id);const {error}=await supabase.from("usuarios").update({...patch,atualizado_em:new Date().toISOString()}).eq("id",id);if(error)setMessage(error.message);else await loadRows();setSaving(null);};
+ const setUserPlan=async(id:string,plano:string)=>{
+   const expira=plano==="plus"?new Date(Date.now()+7*86400000).toISOString():plano==="mensal"?new Date(Date.now()+30*86400000).toISOString():null;
+   await updateUser(id,{plano,status:"ativo",plano_expira_em:expira});
+ };
+ const createUser=async()=>{
+   setUserActionLoading(true);setMessage("");
+   try{
+     const {data,error}=await supabase.functions.invoke("gerenciar-usuarios",{body:{action:"create",...newUser,creditos:Number(newUser.creditos)}});
+     if(error) throw error;
+     if(!data?.sucesso) throw new Error(data?.erro||"Não foi possível criar o usuário.");
+     setShowUserForm(false);setNewUser({nome:"",email:"",password:"",plano:"gratuito",creditos:20});await loadRows();
+   }catch(e:any){setMessage(e?.message||"Não foi possível criar o usuário.");}
+   finally{setUserActionLoading(false);}
+ };
+ const deleteUser=async(id:string)=>{
+   if(!window.confirm("Remover este usuário e o acesso dele ao Content Brain?")) return;
+   setSaving(id);setMessage("");
+   try{
+     const {data,error}=await supabase.functions.invoke("gerenciar-usuarios",{body:{action:"delete",user_id:id}});
+     if(error) throw error;
+     if(!data?.sucesso) throw new Error(data?.erro||"Não foi possível remover o usuário.");
+     await loadRows();
+   }catch(e:any){setMessage(e?.message||"Não foi possível remover o usuário.");}
+   finally{setSaving(null);}
+ };
  const approve=async(s:any)=>{setSaving(s.id);const days=s.plano==="plus"?7:30;const inicio=new Date();const expira=new Date(inicio.getTime()+days*86400000);const {error}=await supabase.from("assinaturas").update({status:"ativa",inicio_em:inicio.toISOString(),expira_em:expira.toISOString()}).eq("id",s.id);if(!error) await supabase.from("usuarios").update({plano:s.plano,status:"ativo",plano_expira_em:expira.toISOString(),atualizado_em:new Date().toISOString()}).eq("id",s.usuario_id);if(error)setMessage(error.message);else await loadRows();setSaving(null);};
  const reject=async(s:any)=>{setSaving(s.id);const {error}=await supabase.from("assinaturas").update({status:"recusada"}).eq("id",s.id);if(error)setMessage(error.message);else await loadRows();setSaving(null);};
- return <div className="content"><div className="admin-list-head"><div><span className="eyebrow">{cfg[0]}</span><h2>{cfg[1]}</h2><p>{cfg[2]}</p></div></div>{message&&<div className="search-error">{message}</div>}{rowsLoading?<div className="panel table-placeholder"><div className="empty-row"><span>◌</span><div><strong>Carregando...</strong><p>Consultando o Supabase.</p></div></div></div>:<><div className="panel table-placeholder"><div className="table-head"><span>NOME</span><span>STATUS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div>{rows.length===0?<div className="empty-row"><span>○</span><div><strong>Nenhum registro para exibir</strong><p>Quando houver dados, eles aparecerão aqui.</p></div></div>:rows.map((r:any)=><div className="table-row" key={r.id}><span><strong>{type==="usuarios"?(r.nome||r.email||"Usuário"):(r.titulo||r.tema||"Conhecimento")}</strong><small>{type==="usuarios"?r.email:(r.livros?.titulo||"Livro não informado")}</small></span><span>{type==="usuarios"?(r.plano+" • "+r.creditos+" créditos"):(r.tipo||"Conhecimento")}</span><span>{r.criado_em?new Date(r.criado_em).toLocaleDateString("pt-BR"):"—"}</span><span>{type==="usuarios"?<div className="admin-user-actions"><button disabled={saving===r.id} onClick={()=>updateUser(r.id,{creditos:Math.max(0,r.creditos-1)})}>−1</button><button disabled={saving===r.id} onClick={()=>updateUser(r.id,{creditos:r.creditos+1})}>+1</button><button disabled={saving===r.id} onClick={()=>updateUser(r.id,{status:r.status==="ativo"?"inativo":"ativo"})}>{r.status==="ativo"?"Bloquear":"Ativar"}</button></div>:<span>—</span>}</span></div>)}</div>{type==="usuarios"&&<section className="panel table-placeholder" style={{marginTop:24}}><div className="panel-label">SOLICITAÇÕES DE PLANOS</div>{assinaturas.length===0?<div className="empty-row"><span>◇</span><div><strong>Nenhuma solicitação</strong><p>As solicitações dos usuários aparecerão aqui.</p></div></div>:assinaturas.map((s:any)=><div className="table-row" key={s.id}><span><strong>{s.plano.toUpperCase()} • R$ {Number(s.valor).toFixed(2)}</strong><small>{s.usuario_id}</small></span><span>{s.status}</span><span>{new Date(s.criado_em).toLocaleDateString("pt-BR")}</span><span>{s.status==="pendente"?<div className="admin-user-actions"><button disabled={saving===s.id} onClick={()=>approve(s)}>Ativar</button><button disabled={saving===s.id} onClick={()=>reject(s)}>Recusar</button></div>:<span>—</span>}</span></div>)}</section>}</> }</div>;
+ return <div className="content"><div className="admin-list-head"><div><span className="eyebrow">{cfg[0]}</span><h2>{cfg[1]}</h2><p>{cfg[2]}</p></div>{type==="usuarios"&&<button className="admin-add-user" onClick={()=>setShowUserForm(true)}><span>＋</span> Adicionar usuário</button>}</div>{message&&<div className="search-error">{message}</div>}{rowsLoading?<div className="panel table-placeholder"><div className="empty-row"><span>◌</span><div><strong>Carregando...</strong><p>Consultando o Supabase.</p></div></div></div>:<><div className="panel table-placeholder"><div className="table-head"><span>NOME</span><span>STATUS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div>{rows.length===0?<div className="empty-row"><span>○</span><div><strong>Nenhum registro para exibir</strong><p>Quando houver dados, eles aparecerão aqui.</p></div></div>:rows.map((r:any)=><div className="table-row" key={r.id}><span><strong>{type==="usuarios"?(r.nome||r.email||"Usuário"):(r.titulo||r.tema||"Conhecimento")}</strong><small>{type==="usuarios"?r.email:(r.livros?.titulo||"Livro não informado")}</small></span><span>{type==="usuarios"?(r.plano+" • "+r.creditos+" créditos"):(r.tipo||"Conhecimento")}</span><span>{r.criado_em?new Date(r.criado_em).toLocaleDateString("pt-BR"):"—"}</span><span>{type==="usuarios"?<div className="admin-user-actions">
+ <button className="credit-minus" title="Remover 1 crédito" disabled={saving===r.id} onClick={()=>updateUser(r.id,{creditos:Math.max(0,r.creditos-1)})}>−</button>
+ <span className="credit-number">{r.creditos}</span>
+ <button className="credit-plus" title="Adicionar 1 crédito" disabled={saving===r.id} onClick={()=>updateUser(r.id,{creditos:r.creditos+1})}>+</button>
+ <select className="plan-select" value={r.plano} disabled={saving===r.id} onChange={e=>setUserPlan(r.id,e.target.value)}>
+   <option value="gratuito">Gratuito</option><option value="plus">Plus · 7 dias</option><option value="mensal">Mensal · 30 dias</option>
+ </select>
+ <button className="user-status-button" disabled={saving===r.id} onClick={()=>updateUser(r.id,{status:r.status==="ativo"?"inativo":"ativo"})}>{r.status==="ativo"?"Bloquear":"Ativar"}</button>
+ <button className="user-delete-button" title="Remover usuário" disabled={saving===r.id} onClick={()=>deleteUser(r.id)}>⌫</button>
+ </div>:<span>—</span>}</span></div>)}</div>{type==="usuarios"&&<section className="panel table-placeholder" style={{marginTop:24}}><div className="panel-label">SOLICITAÇÕES DE PLANOS</div>{assinaturas.length===0?<div className="empty-row"><span>◇</span><div><strong>Nenhuma solicitação</strong><p>As solicitações dos usuários aparecerão aqui.</p></div></div>:assinaturas.map((s:any)=><div className="table-row" key={s.id}><span><strong>{s.plano.toUpperCase()} • R$ {Number(s.valor).toFixed(2)}</strong><small>{s.usuario_id}</small></span><span>{s.status}</span><span>{new Date(s.criado_em).toLocaleDateString("pt-BR")}</span><span>{s.status==="pendente"?<div className="admin-user-actions"><button disabled={saving===s.id} onClick={()=>approve(s)}>Ativar</button><button disabled={saving===s.id} onClick={()=>reject(s)}>Recusar</button></div>:<span>—</span>}</span></div>)}</section>}
+ {type==="usuarios"&&showUserForm&&<div className="modal-backdrop" onClick={()=>!userActionLoading&&setShowUserForm(false)}><div className="modal admin-user-modal" onClick={e=>e.stopPropagation()}>
+   <button className="close" onClick={()=>setShowUserForm(false)}>×</button>
+   <div className="modal-logo"><span>content</span><strong>brain</strong></div>
+   <span className="eyebrow">NOVO USUÁRIO</span><h2>Adicionar usuário</h2><p>Crie o acesso e já defina o plano.</p>
+   <label>Nome<input value={newUser.nome} onChange={e=>setNewUser({...newUser,nome:e.target.value})} placeholder="Nome do usuário"/></label>
+   <label>E-mail<input type="email" value={newUser.email} onChange={e=>setNewUser({...newUser,email:e.target.value})} placeholder="email@exemplo.com"/></label>
+   <label>Senha inicial<input type="password" value={newUser.password} onChange={e=>setNewUser({...newUser,password:e.target.value})} placeholder="Mínimo 6 caracteres"/></label>
+   <div className="form-row"><label>Plano<select value={newUser.plano} onChange={e=>setNewUser({...newUser,plano:e.target.value})}><option value="gratuito">Gratuito</option><option value="plus">Plus · 7 dias</option><option value="mensal">Mensal · 30 dias</option></select></label><label>Créditos<input type="number" min="0" value={newUser.creditos} onChange={e=>setNewUser({...newUser,creditos:Number(e.target.value)})}/></label></div>
+   <button className="btn btn-primary full" disabled={userActionLoading} onClick={createUser}>{userActionLoading?"Criando...":"Criar usuário"} <span>→</span></button>
+ </div></div>}
+ </div>;
 }
 
 function Landing({open}:{open:(t:"login"|"signup")=>void}) {
