@@ -660,3 +660,97 @@
     justify-content:flex-start;
   }
 }
+
+
+/* ADMIN — RESPONSIVIDADE COMPLETA */
+@media (max-width: 1100px){
+  .admin-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .admin-list-head{gap:18px;}
+  .admin-user-actions{gap:6px;}
+}
+
+@media (max-width: 700px){
+  /* Cabeçalho administrativo */
+  .admin-top-badge{padding:8px 10px;font-size:9px;white-space:nowrap;}
+  .topbar:has(.admin-top-badge){align-items:center;}
+  .topbar:has(.admin-top-badge)>div:nth-child(2){min-width:0;flex:1;}
+  .topbar:has(.admin-top-badge) h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* Visão geral */
+  .admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px;}
+  .admin-stats>div{padding:15px 13px;min-width:0;}
+  .admin-stats small{font-size:7px;line-height:1.35;}
+  .admin-stats strong{font-size:23px;margin:6px 0 3px;}
+  .admin-stats span{font-size:9px;line-height:1.35;display:block;}
+  .admin-grid{grid-template-columns:1fr;gap:10px;}
+  .admin-action{min-height:0;padding:18px;}
+  .admin-action h3{font-size:17px;margin:14px 0 6px;}
+  .admin-action p{min-height:0;font-size:11px;margin-bottom:13px;}
+  .admin-action button{width:100%;min-height:40px;}
+
+  /* Cabeçalhos de Biblioteca / Processamento / Conhecimentos / Usuários */
+  .admin-list-head{width:100%;margin-bottom:18px;gap:13px;}
+  .admin-list-head>div{width:100%;min-width:0;}
+  .admin-list-head h2{font-size:25px;line-height:1.15;letter-spacing:-.7px;}
+  .admin-list-head p{font-size:11px;line-height:1.5;}
+  .admin-add-user,.admin-add-book{width:100%;justify-content:center;min-height:42px;}
+
+  /* Mensagens */
+  .content>.search-error{width:100%;overflow-wrap:anywhere;}
+
+  /* Cards de livros e processamento */
+  .content>.results-list .knowledge-card{display:block;padding:16px 15px;margin-bottom:9px;}
+  .content>.results-list .knowledge-card .knowledge-main{width:100%;}
+  .content>.results-list .knowledge-card .knowledge-main h3{font-size:15px;line-height:1.35;overflow-wrap:anywhere;}
+  .content>.results-list .knowledge-card .knowledge-meta{font-size:9px;}
+  .content>.results-list .knowledge-card .excerpt{font-size:11px;}
+  .content>.results-list .knowledge-card>div:last-child{width:100%;margin-top:13px;}
+  .content>.results-list .knowledge-card>div:last-child .primary-large{width:100%;min-height:40px;}
+  .content>.results-list .knowledge-card .status-ok{display:block;text-align:center;width:100%;}
+  .book-file-name{max-width:100%;overflow-wrap:anywhere;}
+
+  /* Tabela de conhecimentos e usuários vira cartões */
+  .table-placeholder{width:100%;border-radius:11px;}
+  .table-row{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:15px;}
+  .table-row>span{display:block!important;width:100%;min-width:0;overflow:visible;white-space:normal!important;}
+  .table-row>span:first-child{display:flex!important;gap:3px;}
+  .table-row>span:first-child strong{font-size:12px;white-space:normal;overflow-wrap:anywhere;}
+  .table-row>span:first-child small{font-size:9px;white-space:normal;overflow-wrap:anywhere;}
+  .table-row>span:nth-child(2),.table-row>span:nth-child(3){font-size:10px;white-space:normal;overflow-wrap:anywhere;}
+  .table-row>span:nth-child(1):before{content:"NOME";}
+  .table-row>span:nth-child(2):before{content:"STATUS / TIPO";}
+  .table-row>span:nth-child(3):before{content:"ATUALIZAÇÃO";}
+  .table-row>span:nth-child(4):before{content:"AÇÕES";}
+  .table-row>span:before{display:block;font-size:7px;letter-spacing:1px;color:#aaa;font-weight:800;margin-bottom:5px;}
+  .admin-user-actions{display:flex;width:100%;align-items:stretch;justify-content:flex-start;gap:6px;flex-wrap:wrap;}
+  .admin-user-actions .credit-minus,.admin-user-actions .credit-plus,.admin-user-actions .user-delete-button{flex:0 0 34px;width:34px;min-width:34px;height:34px!important;}
+  .admin-user-actions .credit-number{flex:0 0 28px;width:28px;min-width:28px;height:34px;display:flex;align-items:center;justify-content:center;}
+  .admin-user-actions .credit-add-group{flex:1 1 100%;width:100%;min-width:0;height:38px;}
+  .admin-user-actions .credit-add-group input{min-width:0;}
+  .admin-user-actions .credit-add-button{min-width:92px;}
+  .admin-user-actions .plan-select{flex:1 1 150px;min-width:0;height:36px;}
+  .admin-user-actions .user-status-button{flex:1 1 105px;min-width:95px;height:36px!important;}
+
+  /* Solicitações de planos */
+  .content>.panel[style]{margin-top:14px!important;}
+  .content>.panel[style] .table-row{padding:15px;}
+
+  /* Modal de usuário/livro */
+  .modal-backdrop{padding:12px;align-items:flex-end;}
+  .admin-user-modal{width:100%;max-width:none;max-height:92vh;overflow-y:auto;border-radius:16px;padding:22px 17px;}
+  .admin-user-modal h2{font-size:22px;}
+  .admin-user-modal p{font-size:11px;line-height:1.5;}
+  .admin-user-modal .form-row{display:flex;flex-direction:column;gap:0;}
+  .admin-user-modal label{width:100%;}
+  .admin-user-modal input,.admin-user-modal select{width:100%;box-sizing:border-box;}
+  .admin-user-modal .btn.full{width:100%;min-height:44px;}
+  .book-modal{padding-bottom:20px;}
+}
+
+@media (max-width: 380px){
+  .admin-stats{grid-template-columns:1fr;}
+  .admin-top-badge{font-size:8px;padding:7px 8px;}
+  .admin-list-head h2{font-size:23px;}
+  .admin-user-actions .user-status-button{flex-basis:100%;}
+}
