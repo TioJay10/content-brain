@@ -78,86 +78,99 @@ function Dashboard({setPage}:{setPage:(p:Page)=>void}) {
  </div>
 }
 
-function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void}) {
- const [query,setQuery]=useState("Técnicas de vendas");
+function Pesquisa({setPage, selected, setSelected, initialQuery, autoRun}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void; initialQuery?:string; autoRun?:boolean}) {
+ const [query,setQuery]=useState(initialQuery||"Técnicas de vendas");
  const [items,setItems]=useState<Knowledge[]>([]);
  const [loading,setLoading]=useState(false);
  const [searched,setSearched]=useState(false);
  const [error,setError]=useState("");
- const search=async()=>{
+ const [filterOpen,setFilterOpen]=useState(false);
+ const [filterType,setFilterType]=useState("todos");
+ const [sortMode,setSortMode]=useState("relevantes");
+
+ const mapResults=(data:any[]) => (data||[]).map((r:any)=>({
+   id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,
+   analise_aplicacao:r.analise_aplicacao,relevancia:r.relevancia,pagina:r.pagina??null,
+   livro:r.livro??"Livro não informado",autor:r.autor??"Autor não informado"
+ })) as Knowledge[];
+
+ const runSearch=async(consume=true)=>{
    if(loading)return;
    setLoading(true); setError("");
    const term=query.trim();
-   if(!term){ setError("Digite um tema, técnica ou princípio para pesquisar."); setSearched(false); setLoading(false); return; }
-
-   try {
-     const {data:consumo,error:consumoError}=await supabase.rpc("consumir_credito_e_registrar_pesquisa",{p_consulta:term,p_resultados:0});
-     if(consumoError){
-       if(consumoError.message?.includes("CRÉDITOS_INSUFICIENTES")) setError("Você ficou sem créditos. Escolha um plano para continuar pesquisando.");
-       else setError(consumoError.message||"Não foi possível iniciar a pesquisa agora.");
-       setItems([]); setSearched(false); return;
+   if(!term){setError("Digite um tema, técnica ou princípio para pesquisar.");setSearched(false);setLoading(false);return;}
+   try{
+     let pesquisaId:string|undefined;
+     if(consume){
+       const {data:consumo,error:consumoError}=await supabase.rpc("consumir_credito_e_registrar_pesquisa",{p_consulta:term,p_resultados:0});
+       if(consumoError){
+         if(consumoError.message?.includes("CRÉDITOS_INSUFICIENTES")) setError("Você ficou sem créditos. Escolha um plano para continuar pesquisando.");
+         else setError(consumoError.message||"Não foi possível iniciar a pesquisa agora.");
+         setItems([]);setSearched(false);return;
+       }
+       pesquisaId=consumo?.pesquisa_id as string|undefined;
      }
-
-     const pesquisaId=consumo?.pesquisa_id as string | undefined;
      const {data,error:searchError}=await supabase.rpc("buscar_conhecimentos",{p_consulta:term});
-
-     if(searchError){
-       setError(searchError.message||"Não foi possível carregar os conhecimentos.");
-       setItems([]);
-       setSearched(true);
-       return;
-     }
-
-     const mapped=(data||[]).map((r:any)=>({
-       id:r.id,
-       titulo:r.titulo,
-       tipo:r.tipo,
-       tema:r.tema,
-       trecho:r.trecho,
-       conteudo:r.conteudo,
-       analise_aplicacao:r.analise_aplicacao,
-       relevancia:r.relevancia,
-       pagina:r.pagina??null,
-       livro:r.livro??"Livro não informado",
-       autor:r.autor??"Autor não informado"
-     })) as Knowledge[];
-
-     setItems(mapped);
-     setSearched(true);
+     if(searchError){setError(searchError.message||"Não foi possível carregar os conhecimentos.");setItems([]);setSearched(true);return;}
+     const mapped=mapResults(data||[]);
+     setItems(mapped);setSearched(true);
      if(pesquisaId) await supabase.from("pesquisas").update({resultados:mapped.length}).eq("id",pesquisaId);
-   } catch(e:any) {
-     setError(e?.message||"Não foi possível concluir a pesquisa.");
-     setItems([]);
-     setSearched(true);
-   } finally {
-     setLoading(false);
-   }
+   }catch(e:any){setError(e?.message||"Não foi possível concluir a pesquisa.");setItems([]);setSearched(true);}
+   finally{setLoading(false);}
  };
+
+ useEffect(()=>{
+   if(autoRun && initialQuery){setQuery(initialQuery);void runSearch(false);}
+ },[initialQuery,autoRun]);
+
+ const visibleItems=items
+   .filter(r=>filterType==="todos"||((r.tipo||"").trim().toLowerCase()==filterType.toLowerCase()))
+   .sort((a,b)=>sortMode==="recentes" ? (Number(b.pagina||0)-Number(a.pagina||0)) : sortMode==="alfabetico" ? String(a.titulo||a.tema||"").localeCompare(String(b.titulo||b.tema||"")) : Number(b.relevancia||0)-Number(a.relevancia||0));
+
+ const filterTypes=Array.from(new Set(items.map(r=>(r.tipo||"CONHECIMENTO").trim()).filter(Boolean)));
+
  return <div className="content">
    <section className="search-page-head">
-     <div className="search-input-large"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")search()}} placeholder="Digite um tema, técnica ou princípio..." /><button onClick={()=>{setQuery("");setItems([]);setSearched(false);setError("")}}>×</button></div>
-     <button className="primary-large" onClick={search}>{loading?"Buscando...":"Pesquisar"}</button>
+     <div className="search-input-large"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")runSearch(true)}} placeholder="Digite um tema, técnica ou princípio..." /><button onClick={()=>{setQuery("");setItems([]);setSearched(false);setError("");setFilterOpen(false)}}>×</button></div>
+     <button className="primary-large" onClick={()=>runSearch(true)}>{loading?"Buscando...":"Pesquisar"}</button>
    </section>
-   <div className="results-toolbar"><span>{searched ? items.length+" conhecimentos encontrados" : "Pesquise na biblioteca"}</span><div><button>Filtrar</button><button>Mais relevantes⌄</button></div></div>
-   {error && <div className="search-error">{error}</div>}
-   {!searched && <section className="search-empty"><div className="empty-mark">⌕</div><h2>O que você quer aprender?</h2><p>Digite um tema, técnica ou princípio para encontrar conhecimentos organizados na biblioteca.</p></section>}
-   {searched && !loading && items.length===0 && !error && <section className="search-empty"><div className="empty-mark">○</div><h2>Nenhum conhecimento encontrado</h2><p>Não encontramos resultados para “{query}”. Tente outro termo ou uma expressão mais curta.</p></section>}
-   {loading && <div className="search-empty"><h2>Consultando a biblioteca...</h2><p>Estamos buscando nos conhecimentos cadastrados no Supabase.</p></div>}
-   <div className="results-list">{items.map(r=>{
+   <div className="results-toolbar">
+     <span>{searched ? visibleItems.length+" conhecimentos encontrados" : "Pesquise na biblioteca"}</span>
+     <div className="results-tools">
+       <button className={filterOpen?"tool-button active":"tool-button"} onClick={()=>setFilterOpen(v=>!v)}>Filtrar⌄</button>
+       <button className="tool-button" onClick={()=>setSortMode(v=>v==="relevantes"?"recentes":v==="recentes"?"alfabetico":"relevantes")}>{
+         sortMode==="relevantes"?"Mais relevantes⌄":sortMode==="recentes"?"Mais recentes⌄":"Alfabético⌄"
+       }</button>
+     </div>
+   </div>
+   {filterOpen&&searched&&<div className="search-filters">
+     <button className={filterType==="todos"?"filter-chip active":"filter-chip"} onClick={()=>setFilterType("todos")}>Todos</button>
+     {filterTypes.map(t=><button key={t} className={filterType.toLowerCase()===t.toLowerCase()?"filter-chip active":"filter-chip"} onClick={()=>setFilterType(t)}>{t}</button>)}
+   </div>}
+   {error&&<div className="search-error">{error}</div>}
+   {!searched&&<section className="search-empty"><div className="empty-mark">⌕</div><h2>O que você quer aprender?</h2><p>Digite um tema, técnica ou princípio para encontrar conhecimentos organizados na biblioteca.</p></section>}
+   {searched&&!loading&&visibleItems.length===0&&!error&&<section className="search-empty"><div className="empty-mark">○</div><h2>Nenhum conhecimento encontrado</h2><p>Não encontramos resultados para “{query}” com os filtros atuais.</p></section>}
+   {loading&&<div className="search-empty"><h2>Consultando a biblioteca...</h2><p>Estamos buscando nos conhecimentos cadastrados no Supabase.</p></div>}
+   <div className="results-list">{visibleItems.map(r=>{
      const isSelected=selected.some(x=>x.id===r.id);
-     return <article className={isSelected?"knowledge-card selected":"knowledge-card"} key={r.id} onClick={async()=>{const next=isSelected?selected.filter(x=>x.id!==r.id):[...selected,r];setSelected(next);const {data:{user}}=await supabase.auth.getUser();if(user){if(isSelected) await supabase.from("selecoes").delete().eq("usuario_id",user.id).eq("conhecimento_id",r.id);else await supabase.from("selecoes").insert({usuario_id:user.id,conhecimento_id:r.id});}}}>
+     return <article className={isSelected?"knowledge-card selected":"knowledge-card"} key={r.id} onClick={async()=>{
+       const next=isSelected?selected.filter(x=>x.id!==r.id):[...selected,r];setSelected(next);
+       const {data:{user}}=await supabase.auth.getUser();
+       if(user){if(isSelected) await supabase.from("selecoes").delete().eq("usuario_id",user.id).eq("conhecimento_id",r.id);else await supabase.from("selecoes").insert({usuario_id:user.id,conhecimento_id:r.id});}
+     }}>
        <div className="check">{isSelected?"✓":""}</div><div className="knowledge-main">
          <div className="knowledge-meta"><span>{r.tipo||"CONHECIMENTO"}</span><span>•</span><span>{r.livro}</span>{r.pagina&&<><span>•</span><span>p. {r.pagina}</span></>}</div>
          <h3>{r.titulo||r.tema||"Conhecimento"}</h3><p className="excerpt">“{r.trecho||r.conteudo||"Conteúdo não informado."}”</p>
          {r.analise_aplicacao&&<div className="application"><b>NOTA DE APLICAÇÃO</b><span>{r.analise_aplicacao}</span></div>}
          <small>{r.autor}</small>
        </div><span className="card-arrow">↗</span>
-     </article>
+     </article>;
    })}</div>
-   {searched && items.length>0 && <div className="more-results"><button onClick={search}>+ Procurar mais resultados</button><span>{selected.length} selecionado{selected.length!==1?"s":""}</span></div>}
-   {selected.length>0 && <div className="selection-bar"><span><b>{selected.length}</b> conhecimentos selecionados</span><button onClick={()=>setPage("selecionados")}>Revisar seleção →</button></div>}
+   {searched&&visibleItems.length>0&&<div className="more-results"><button onClick={()=>runSearch(true)}>+ Procurar mais resultados</button><span>{selected.length} selecionado{selected.length!==1?"s":""}</span></div>}
+   {selected.length>0&&<div className="selection-bar"><span><b>{selected.length}</b> conhecimentos selecionados</span><button onClick={()=>setPage("selecionados")}>Revisar seleção →</button></div>}
  </div>;
 }
+
 function Selecionados({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void}) {
  const [copied,setCopied]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -190,11 +203,13 @@ function Ideas({setPage}:{setPage:(p:Page)=>void}) {
  return <div className="content"><div className="section-intro"><div><span className="eyebrow">A PARTIR DO CONHECIMENTO</span><h2>Ideias para transformar conhecimento em conteúdo.</h2><p>Use os conhecimentos selecionados como ponto de partida.</p></div></div><div className="idea-grid">{ideas.map((x,i)=><article className="idea-card" key={x}><span>0{i+1}</span><h3>{x}</h3><p>Uma possibilidade de conteúdo construída a partir dos conhecimentos da biblioteca.</p><button onClick={()=>setPage("selecionados")}>Ver conhecimentos →</button></article>)}</div></div>
 }
 
-function Historico(){
+function Historico({setPage,setHistoryQuery}:{setPage:(p:Page)=>void;setHistoryQuery:(q:string)=>void}){
  const [items,setItems]=useState<any[]>([]); const [loading,setLoading]=useState(true);
  useEffect(()=>{(async()=>{const {data}=await supabase.from("pesquisas").select("id,consulta,resultados,credito_consumido,criado_em").order("criado_em",{ascending:false}).limit(50);setItems(data||[]);setLoading(false);})()},[]);
- return <div className="content"><div className="panel history-panel"><div className="panel-label">ATIVIDADE RECENTE</div>{loading?<div className="empty-row"><span>◌</span><div><strong>Carregando histórico...</strong><p>Consultando suas pesquisas.</p></div></div>:items.length===0?<div className="empty-row"><span>◷</span><div><strong>Nenhuma atividade ainda</strong><p>Suas pesquisas aparecerão aqui.</p></div></div>:items.map(x=><div className="empty-row" key={x.id}><span>⌕</span><div><strong>{x.consulta}</strong><p>{x.resultados} resultado(s) • {new Date(x.criado_em).toLocaleString("pt-BR")}</p></div></div>)}</div></div>
+ const reopen=(consulta:string)=>{setHistoryQuery(consulta);setPage("pesquisa");};
+ return <div className="content"><div className="panel history-panel"><div className="panel-label">ATIVIDADE RECENTE</div>{loading?<div className="empty-row"><span>◌</span><div><strong>Carregando histórico...</strong><p>Consultando suas pesquisas.</p></div></div>:items.length===0?<div className="empty-row"><span>◷</span><div><strong>Nenhuma atividade ainda</strong><p>Suas pesquisas aparecerão aqui.</p></div></div>:items.map(x=><button className="empty-row history-item" key={x.id} onClick={()=>reopen(x.consulta)}><span>⌕</span><div><strong>{x.consulta}</strong><p>{x.resultados} resultado(s) • {new Date(x.criado_em).toLocaleString("pt-BR")}</p></div><b>→</b></button>)}</div></div>
 }
+
 function Conta(){
  const [nome,setNome]=useState(""); const [email,setEmail]=useState(""); const [creditos,setCreditos]=useState(20); const [plano,setPlano]=useState("gratuito"); const [status,setStatus]=useState("");
  useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;setEmail(user.email||"");const {data}=await supabase.from("usuarios").select("nome,email,creditos,plano").eq("id",user.id).maybeSingle();if(data){setNome(data.nome||"");setCreditos(data.creditos??20);setPlano(data.plano||"gratuito");}})()},[]);
@@ -399,6 +414,7 @@ export default function App(){
  const [page,setPage]=useState<Page>("dashboard");
  const [modal,setModal]=useState<"login"|"signup"|null>(null);
  const [selected,setSelected]=useState<Knowledge[]>([]);
+ const [historyQuery,setHistoryQuery]=useState<string>("");
  const open=(t:"login"|"signup")=>setModal(t);
 
  useEffect(()=>{
@@ -423,7 +439,7 @@ export default function App(){
 
  if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} switchType={(next)=>setModal(next)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}</>;
  if(mode==="admin") return <AdminLayout page={page} setPage={setPage}>{page==="admin"?<Admin setPage={setPage}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
- return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="selecionados"?<Selecionados setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
+ return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage} selected={selected} setSelected={setSelected} initialQuery={historyQuery||undefined} autoRun={Boolean(historyQuery)}/>:page==="selecionados"?<Selecionados setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico setPage={setPage} setHistoryQuery={(q)=>setHistoryQuery(q)}/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
 }
 
 
