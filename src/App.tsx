@@ -228,6 +228,13 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
        const fim=Number(data.fim||inicio);
        const total=Number(data.total_paginas||livro.total_paginas||0);
        setProgress(p=>({...p,[livro.id]:{done:fim,total}}));
+
+       const {data:knowledgeData,error:knowledgeError}=await supabase.functions.invoke("gerar-conhecimentos",{
+         body:{livro_id:livro.id,inicio,limite:25}
+       });
+       if(knowledgeError) throw knowledgeError;
+       if(!knowledgeData?.sucesso) throw new Error(knowledgeData?.erro||"Falha ao gerar conhecimentos.");
+
        finished=Boolean(data.concluido);
        if(!finished) inicio=Number(data.proxima_pagina||fim+1);
      }
