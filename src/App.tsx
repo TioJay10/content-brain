@@ -225,7 +225,8 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  const [loading,setLoading]=useState(type==="livros"||type==="processamento");
  const [processing,setProcessing]=useState<string|null>(null);
  const [progress,setProgress]=useState<Record<string,{done:number,total:number}>>({});
- const [message,setMessage]=useState(""); const [rows,setRows]=useState<any[]>([]); const [rowsLoading,setRowsLoading]=useState(false); const [saving,setSaving]=useState<string|null>(null); const [assinaturas,setAssinaturas]=useState<any[]>([]);
+ const [message,setMessage]=useState(""); const [rows,setRows]=useState<any[]>([]); const [rowsLoading,setRowsLoading]=useState(false); const [saving,setSaving]=useState<string|null>(null);
+ const [creditAmounts,setCreditAmounts]=useState<Record<string,string>>({}); const [assinaturas,setAssinaturas]=useState<any[]>([]);
  const [showUserForm,setShowUserForm]=useState(false);
  const [newUser,setNewUser]=useState({nome:"",email:"",password:"",plano:"gratuito",creditos:20});
  const [userActionLoading,setUserActionLoading]=useState(false);
@@ -332,6 +333,10 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  <button className="credit-minus" title="Remover 1 crédito" disabled={saving===r.id} onClick={()=>updateUser(r.id,{creditos:Math.max(0,r.creditos-1)})}>−</button>
  <span className="credit-number">{r.creditos}</span>
  <button className="credit-plus" title="Adicionar 1 crédito" disabled={saving===r.id} onClick={()=>updateUser(r.id,{creditos:r.creditos+1})}>+</button>
+ <div className="credit-add-group" title="Adicionar vários créditos">
+   <input type="number" min="1" placeholder="Qtd." value={creditAmounts[r.id]||""} disabled={saving===r.id} onChange={e=>setCreditAmounts({...creditAmounts,[r.id]:e.target.value})} onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(e.key==="Enter"){const n=Math.max(0,Number(creditAmounts[r.id]||0));if(n>0){updateUser(r.id,{creditos:r.creditos+n});setCreditAmounts({...creditAmounts,[r.id]:""});}}}} />
+   <button className="credit-add-button" title="Adicionar quantidade informada" disabled={saving===r.id||!(Number(creditAmounts[r.id]||0)>0)} onClick={e=>{e.stopPropagation();const n=Math.max(0,Number(creditAmounts[r.id]||0));if(n>0){updateUser(r.id,{creditos:r.creditos+n});setCreditAmounts({...creditAmounts,[r.id]:""});}}}>Adicionar</button>
+ </div>
  <select className="plan-select" value={r.plano} disabled={saving===r.id} onChange={e=>setUserPlan(r.id,e.target.value)}>
    <option value="gratuito">Gratuito</option><option value="plus">Plus · 7 dias</option><option value="mensal">Mensal · 30 dias</option>
  </select>
