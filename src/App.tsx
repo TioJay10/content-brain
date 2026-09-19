@@ -97,16 +97,22 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
    }
    const pesquisaId=consumo?.pesquisa_id as string | undefined;
 
-   let request=supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id,paginas(numero_pagina),livros(titulo,autor)");
-   request=request.or("titulo.ilike.%"+term+"%,tema.ilike.%"+term+"%,trecho.ilike.%"+term+"%,conteudo.ilike.%"+term+"%");
+   let request=supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id");
+   const filtros=term.split(/\\s+/).filter(Boolean).map((t:string)=>"titulo.ilike.%"+t+"%,tema.ilike.%"+t+"%,trecho.ilike.%"+t+"%,conteudo.ilike.%"+t+"%");
+   if(filtros.length) request=request.or(filtros.join(","));
    const {data,error}=await request.order("relevancia",{ascending:false,nullsLast:true}).limit(40);
    if(error){ setError("A pesquisa foi registrada, mas não foi possível carregar os conhecimentos."); setItems([]); }
    else {
-     const mapped=(data||[]).map((r:any)=>({
-       id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,
-       analise_aplicacao:r.analise_aplicacao,relevancia:r.relevancia,
-       pagina:r.paginas?.numero_pagina ?? null, livro:r.livros?.titulo ?? "Livro não informado", autor:r.livros?.autor ?? "Autor não informado"
-     }));
+     const base=data||[];
+     const paginaIds=base.map((r:any)=>r.pagina_id).filter(Boolean);
+     const livroIds=base.map((r:any)=>r.livro_id).filter(Boolean);
+     const [{data:paginas},{data:livros}]=await Promise.all([
+       paginaIds.length?supabase.from("paginas").select("id,numero_pagina").in("id",paginaIds):Promise.resolve({data:[]}),
+       livroIds.length?supabase.from("livros").select("id,titulo,autor").in("id",livroIds):Promise.resolve({data:[]})
+     ]);
+     const pm=new Map((paginas||[]).map((p:any)=>[p.id,p.numero_pagina]));
+     const lm=new Map((livros||[]).map((l:any)=>[l.id,l]));
+     const mapped=base.map((r:any)=>({id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,analise_aplicacao:r.analise_aplicacao,relevancia:r.relevancia,pagina:pm.get(r.pagina_id)??null,livro:lm.get(r.livro_id)?.titulo??"Livro não informado",autor:lm.get(r.livro_id)?.autor??"Autor não informado"}));
      setItems(mapped);
      if(pesquisaId) await supabase.from("pesquisas").update({resultados:mapped.length}).eq("id",pesquisaId);
    }
