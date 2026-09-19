@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "./supabaseClient";
 
 type Page =
@@ -180,7 +180,7 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  };
 
  if(type==="livros"||type==="processamento"){
-   if(livros.length===0 && loading) void loadLivros();
+   useEffect(()=>{ void loadLivros(); }, []);
    return <div className="content">
      <div className="admin-list-head">
        <div><span className="eyebrow">{type==="livros"?"BIBLIOTECA":"PROCESSAMENTO"}</span><h2>{type==="livros"?"Livros cadastrados":"Fila de processamento"}</h2><p>{type==="livros"?"Seu acervo de livros alimenta a base do Content Brain.":"Processe os livros em lotes de até 25 páginas."}</p></div>
