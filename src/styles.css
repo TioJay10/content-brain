@@ -365,3 +365,257 @@
  .selection-bar{bottom:10px;gap:10px}
  .selection-bar span{line-height:1.4}
 }
+
+
+/* MENU MOBILE + PESQUISA RESPONSIVA */
+.mobile-menu-head,
+.mobile-menu-button,
+.mobile-nav-overlay{
+  display:none;
+}
+
+@media(max-width:700px){
+  .app-shell{
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  .workspace{
+    width:100%;
+    min-width:0;
+    margin-left:0;
+  }
+
+  .sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:min(82vw,310px);
+    z-index:1000;
+    transform:translateX(-105%);
+    transition:transform .22s ease;
+    box-shadow:18px 0 45px #17171b20;
+  }
+
+  .sidebar.mobile-open{
+    transform:translateX(0);
+  }
+
+  .desktop-logo{
+    display:none;
+  }
+
+  .mobile-menu-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-height:58px;
+    padding:0 18px;
+    border-bottom:1px solid #eeeeF3;
+  }
+
+  .mobile-menu-head .app-logo{
+    margin:0;
+  }
+
+  .mobile-menu-close{
+    width:36px;
+    height:36px;
+    border:1px solid #e2e1e8;
+    background:#fff;
+    color:#4e4c57;
+    border-radius:9px;
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+  }
+
+  .mobile-nav-overlay{
+    position:fixed;
+    inset:0;
+    z-index:999;
+    background:#17171b66;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+
+  .mobile-nav-overlay.open{
+    display:block;
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    min-height:68px;
+    padding:12px 15px;
+    gap:10px;
+    background:#fff;
+  }
+
+  .mobile-menu-button{
+    display:grid;
+    place-items:center;
+    flex:0 0 40px;
+    width:40px;
+    height:40px;
+    border:1px solid #e1dfe9;
+    border-radius:10px;
+    background:#fff;
+    color:#35333d;
+    font-size:20px;
+    cursor:pointer;
+  }
+
+  .topbar h1{
+    font-size:18px;
+    line-height:1.2;
+    margin-top:2px;
+  }
+
+  .breadcrumb{
+    font-size:8px;
+  }
+
+  .credit-pill{
+    margin-left:auto;
+    min-height:38px;
+    padding:7px 9px;
+  }
+
+  .credit-pill .credit-icon{
+    display:none;
+  }
+
+  .content{
+    width:100%;
+    padding:18px 14px 80px;
+  }
+
+  .search-page-head{
+    width:100%;
+  }
+
+  .search-input-large{
+    min-height:50px;
+    border-radius:12px;
+    padding:0 12px;
+  }
+
+  .search-input-large input{
+    font-size:14px;
+  }
+
+  .search-page-head>.primary-large{
+    min-height:46px;
+    border-radius:11px;
+  }
+
+  .results-toolbar{
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    margin-bottom:10px;
+  }
+
+  .results-toolbar>span{
+    width:100%;
+    font-size:11px;
+  }
+
+  .results-tools{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+  }
+
+  .results-tools .tool-button{
+    width:100%;
+    min-height:40px;
+  }
+
+  .search-filters{
+    gap:6px;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    padding:4px 0 12px;
+    scrollbar-width:none;
+  }
+
+  .search-filters::-webkit-scrollbar{
+    display:none;
+  }
+
+  .filter-chip{
+    flex:0 0 auto;
+    min-height:36px;
+  }
+
+  .knowledge-card{
+    width:100%;
+    min-width:0;
+    border-radius:12px;
+    padding:16px 40px 16px 43px;
+  }
+
+  .knowledge-main{
+    min-width:0;
+  }
+
+  .knowledge-meta{
+    flex-wrap:wrap;
+    gap:4px 6px;
+    line-height:1.4;
+  }
+
+  .knowledge-main h3{
+    font-size:15px;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+  }
+
+  .excerpt{
+    font-size:12px;
+    line-height:1.65;
+  }
+
+  .application{
+    font-size:11px;
+    line-height:1.55;
+  }
+
+  .more-results{
+    padding:14px 0 5px;
+    gap:8px;
+  }
+
+  .more-results button{
+    width:100%;
+    min-height:42px;
+  }
+
+  .selection-bar{
+    left:10px;
+    right:10px;
+    bottom:10px;
+    width:auto;
+    padding:11px 12px;
+    border-radius:12px;
+    flex-wrap:wrap;
+  }
+
+  .selection-bar span{
+    flex:1 1 100%;
+    font-size:11px;
+  }
+
+  .selection-bar button{
+    width:100%;
+    min-height:40px;
+  }
+}
