@@ -299,3 +299,15 @@
 .book-modal input[type="file"]{padding:10px;background:#fafaff;border:1px dashed #cfcddf;cursor:pointer}
 .book-file-name{font-size:11px;color:#777783;background:#f8f7ff;border:1px solid #e5e3f1;border-radius:8px;padding:10px 12px;margin:2px 0 6px;line-height:1.5}
 .book-file-name b{color:#45434f}
+
+
+/* PESQUISA — filtros, ordenação e histórico clicável */
+.results-tools{display:flex;gap:8px;align-items:center}
+.tool-button{border:1px solid #e3e1ec;background:#fff;color:#4d4a58;border-radius:9px;padding:9px 12px;cursor:pointer;font:inherit}
+.tool-button:hover,.tool-button.active{background:#f6f4ff;border-color:#cfc9ff;color:#5147c9}
+.search-filters{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px;padding:10px 0}
+.filter-chip{border:1px solid #e1dfeb;background:#fff;color:#656270;border-radius:999px;padding:7px 11px;cursor:pointer;font-size:12px}
+.filter-chip.active{background:#f0edff;border-color:#c9c2ff;color:#5147c9;font-weight:600}
+.history-item{width:100%;border:0;text-align:left;background:transparent;cursor:pointer;position:relative;padding-right:40px}
+.history-item:hover{background:#f8f7fc}
+.history-item>b{margin-left:auto;color:#77718e;font-size:16px}
