@@ -160,7 +160,7 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
    let finished=false;
    try {
      while(!finished) {
-       const {data,error}=await supabase.functions.invoke("processar-livro?livro_id="+encodeURIComponent(livro.id)+"&inicio="+inicio+"&limite=25",{body:{}});
+       const {data,error}=await supabase.functions.invoke("processar-livro",{body:{livro_id:livro.id,inicio,limite:25}});
        if(error) throw error;
        if(!data?.sucesso) throw new Error(data?.erro||"Falha no processamento.");
        const fim=Number(data.fim||inicio);
