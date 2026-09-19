@@ -31,37 +31,44 @@ function Logo() {
   return <div className="app-logo"><span>content</span><b>brain</b></div>;
 }
 
-function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Page) => void; admin?: boolean }) {
+function SideNav({ page, setPage, admin = false, mobileOpen = false, onClose = () => {} }: { page: Page; setPage: (p: Page) => void; admin?: boolean; mobileOpen?: boolean; onClose?: () => void }) {
   const signOut = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  const navigate = (p: Page) => { setPage(p); onClose(); };
   const items = admin
     ? [["admin","Visão geral"],["livros","Biblioteca"],["processamento","Processamento"],["conhecimentos","Conhecimentos"],["usuarios","Usuários"]] as [Page,string][]
     : [["dashboard","Início"],["pesquisa","Pesquisar"],["selecionados","Selecionados"],["ideias","Ideias de conteúdo"],["historico","Histórico"]] as [Page,string][];
-  return <aside className="sidebar">
-    <Logo />
-    <div className="side-section">{admin ? "ADMINISTRAÇÃO" : "CONTENT BRAIN"}</div>
-    <nav>{items.map(([key,label]) => <button key={key} className={page===key ? "side-link active" : "side-link"} onClick={()=>setPage(key)}><span className="side-icon">{key==="pesquisa"?"⌕":key==="dashboard"||key==="admin"?"◫":key==="selecionados"?"□":key==="ideias"?"✦":key==="historico"?"◷":key==="livros"?"▤":key==="processamento"?"◌":key==="conhecimentos"?"≡":"○"}</span>{label}</button>)}</nav>
-    {!admin && <div className="side-bottom">
-      <button className={page==="planos" ? "side-link active" : "side-link"} onClick={()=>setPage("planos")}><span className="side-icon">◇</span>Planos</button>
-      <button className={page==="conta" ? "side-link active" : "side-link"} onClick={()=>setPage("conta")}><span className="side-icon">○</span>Minha conta</button>
-    </div>}
-    <div className="sidebar-user"><div className="avatar">J</div><div><strong>Minha conta</strong><small>Acesso ativo</small></div><button className="sidebar-logout" title="Sair" onClick={signOut}>↪</button></div>
-  </aside>;
+  return <>
+    <div className={mobileOpen ? "mobile-nav-overlay open" : "mobile-nav-overlay"} onClick={onClose} />
+    <aside className={mobileOpen ? "sidebar mobile-open" : "sidebar"}>
+      <div className="mobile-menu-head"><Logo /><button className="mobile-menu-close" onClick={onClose} aria-label="Fechar menu">×</button></div>
+      <div className="desktop-logo"><Logo /></div>
+      <div className="side-section">{admin ? "ADMINISTRAÇÃO" : "CONTENT BRAIN"}</div>
+      <nav>{items.map(([key,label]) => <button key={key} className={page===key ? "side-link active" : "side-link"} onClick={()=>navigate(key)}><span className="side-icon">{key==="pesquisa"?"⌕":key==="dashboard"||key==="admin"?"◫":key==="selecionados"?"□":key==="ideias"?"✦":key==="historico"?"◷":key==="livros"?"▤":key==="processamento"?"◌":key==="conhecimentos"?"≡":"○"}</span>{label}</button>)}</nav>
+      {!admin && <div className="side-bottom">
+        <button className={page==="planos" ? "side-link active" : "side-link"} onClick={()=>navigate("planos")}><span className="side-icon">◇</span>Planos</button>
+        <button className={page==="conta" ? "side-link active" : "side-link"} onClick={()=>navigate("conta")}><span className="side-icon">○</span>Minha conta</button>
+      </div>}
+      <div className="sidebar-user"><div className="avatar">J</div><div><strong>Minha conta</strong><small>Acesso ativo</small></div><button className="sidebar-logout" title="Sair" onClick={signOut}>↪</button></div>
+    </aside>
+  </>;
 }
 
-function Topbar({ title, setPage, admin=false }: { title: string; setPage: (p:Page)=>void; admin?: boolean }) {
+function Topbar({ title, setPage, admin=false, onMenu }: { title: string; setPage: (p:Page)=>void; admin?: boolean; onMenu?: () => void }) {
   const [creditos,setCreditos]=useState(20);
   useEffect(()=>{if(admin)return;(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[admin]);
-  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div>{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}</header>;
+  return <header className="topbar"><button className="mobile-menu-button" onClick={onMenu} aria-label="Abrir menu">☰</button><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div>{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}</header>;
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
+  const [mobileMenu,setMobileMenu]=useState(false);
   const titles: Record<string,string> = {dashboard:"Início",pesquisa:"Pesquisar conhecimento",selecionados:"Conhecimentos selecionados",ideias:"Ideias de conteúdo",historico:"Histórico",conta:"Minha conta",planos:"Planos"};
-  return <div className="app-shell"><SideNav page={page} setPage={setPage}/><main className="workspace"><Topbar title={titles[page] || "Content Brain"} setPage={setPage}/>{children}</main></div>;
+  return <div className="app-shell"><SideNav page={page} setPage={setPage} mobileOpen={mobileMenu} onClose={()=>setMobileMenu(false)}/><main className="workspace"><Topbar title={titles[page] || "Content Brain"} setPage={setPage} onMenu={()=>setMobileMenu(true)}/>{children}</main></div>;
 }
 
 function AdminLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:React.ReactNode}) {
+  const [mobileMenu,setMobileMenu]=useState(false);
   const titles: Record<string,string> = {admin:"Visão geral",livros:"Biblioteca",processamento:"Processamento",conhecimentos:"Conhecimentos",usuarios:"Usuários"};
-  return <div className="app-shell"><SideNav page={page} setPage={setPage} admin/><main className="workspace"><Topbar title={titles[page] || "Administração"} setPage={setPage} admin/>{children}</main></div>;
+  return <div className="app-shell"><SideNav page={page} setPage={setPage} admin mobileOpen={mobileMenu} onClose={()=>setMobileMenu(false)}/><main className="workspace"><Topbar title={titles[page] || "Administração"} setPage={setPage} admin onMenu={()=>setMobileMenu(true)}/>{children}</main></div>;
 }
 
 function Dashboard({setPage}:{setPage:(p:Page)=>void}) {
