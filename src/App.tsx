@@ -31,8 +31,21 @@ function Logo() {
   return <div className="app-logo"><span>content</span><b>brain</b></div>;
 }
 
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("content-brain-theme", next); } catch {}
+  window.dispatchEvent(new CustomEvent("content-brain-theme-change"));
+}
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "dark";
+}
+
 function SideNav({ page, setPage, admin = false, mobileOpen = false, onClose = () => {} }: { page: Page; setPage: (p: Page) => void; admin?: boolean; mobileOpen?: boolean; onClose?: () => void }) {
   const signOut = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  const [darkMode,setDarkMode]=useState(()=>currentTheme());
+  useEffect(()=>{const sync=()=>setDarkMode(currentTheme());window.addEventListener("content-brain-theme-change",sync);return()=>window.removeEventListener("content-brain-theme-change",sync)},[]);
   const navigate = (p: Page) => { setPage(p); onClose(); };
   const items = admin
     ? [["admin","Visão geral"],["livros","Biblioteca"],["processamento","Processamento"],["conhecimentos","Conhecimentos"],["usuarios","Usuários"]] as [Page,string][]
@@ -48,6 +61,7 @@ function SideNav({ page, setPage, admin = false, mobileOpen = false, onClose = (
         <button className={page==="planos" ? "side-link active" : "side-link"} onClick={()=>navigate("planos")}><span className="side-icon">◇</span>Planos</button>
         <button className={page==="conta" ? "side-link active" : "side-link"} onClick={()=>navigate("conta")}><span className="side-icon">○</span>Minha conta</button>
       </div>}
+      {<button className="mobile-theme-toggle" onClick={()=>{toggleTheme();setDarkMode(!darkMode)}}><span>{darkMode?"☀":"☾"}</span>{darkMode?"Modo claro":"Modo noturno"}</button>}
       {admin && <button className="mobile-admin-logout" onClick={signOut}><span className="logout-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 5H5.5A1.5 1.5 0 0 0 4 6.5v11A1.5 1.5 0 0 0 5.5 19H10"/><path d="M13 8l4 4-4 4"/><path d="M17 12H9"/></svg></span> Sair da conta</button>}
       <div className="sidebar-user"><div className="avatar">J</div><div><strong>{admin?"Administrador":"Minha conta"}</strong><small>{admin?"Acesso administrativo":"Acesso ativo"}</small></div><button className="sidebar-logout" title="Sair" onClick={signOut}><span>↪</span> Sair</button></div>
     </aside>
@@ -59,7 +73,7 @@ function Topbar({ title, setPage, admin=false, onMenu }: { title: string; setPag
   const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("content-brain-theme")==="dark"}catch{return false}});
   useEffect(()=>{document.documentElement.dataset.theme=darkMode?"dark":"light";try{localStorage.setItem("content-brain-theme",darkMode?"dark":"light")}catch{}},[darkMode]);
   useEffect(()=>{if(admin)return;(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[admin]);
-  return <header className="topbar"><button className="mobile-menu-button" onClick={onMenu} aria-label="Abrir menu">☰</button><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><div className="topbar-actions">{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}<button className="theme-toggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Ativar modo claro":"Ativar modo noturno"} title={darkMode?"Modo claro":"Modo noturno"}><span className="theme-icon">{darkMode?"☀":"☾"}</span><span className="theme-label">{darkMode?"Claro":"Escuro"}</span></button></div></header>;
+  return <header className="topbar"><button className="mobile-menu-button" onClick={onMenu} aria-label="Abrir menu">☰</button><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><div className="topbar-actions">{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}<button className="theme-toggle" onClick={()=>{toggleTheme();setDarkMode(v=>!v)}} aria-label={darkMode?"Ativar modo claro":"Ativar modo noturno"} title={darkMode?"Modo claro":"Modo noturno"}><span className="theme-icon">{darkMode?"☀":"☾"}</span><span className="theme-label">{darkMode?"Claro":"Escuro"}</span></button></div></header>;
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
