@@ -56,8 +56,10 @@ function SideNav({ page, setPage, admin = false, mobileOpen = false, onClose = (
 
 function Topbar({ title, setPage, admin=false, onMenu }: { title: string; setPage: (p:Page)=>void; admin?: boolean; onMenu?: () => void }) {
   const [creditos,setCreditos]=useState(20);
+  const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem("content-brain-theme")==="dark"}catch{return false}});
+  useEffect(()=>{document.documentElement.dataset.theme=darkMode?"dark":"light";try{localStorage.setItem("content-brain-theme",darkMode?"dark":"light")}catch{}},[darkMode]);
   useEffect(()=>{if(admin)return;(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[admin]);
-  return <header className="topbar"><button className="mobile-menu-button" onClick={onMenu} aria-label="Abrir menu">☰</button><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div>{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}</header>;
+  return <header className="topbar"><button className="mobile-menu-button" onClick={onMenu} aria-label="Abrir menu">☰</button><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><div className="topbar-actions">{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}<button className="theme-toggle" onClick={()=>setDarkMode(v=>!v)} aria-label={darkMode?"Ativar modo claro":"Ativar modo noturno"} title={darkMode?"Modo claro":"Modo noturno"}><span className="theme-icon">{darkMode?"☀":"☾"}</span><span className="theme-label">{darkMode?"Claro":"Escuro"}</span></button></div></header>;
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
