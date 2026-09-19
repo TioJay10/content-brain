@@ -138,7 +138,76 @@ function Conta(){return <div className="content"><div className="account-grid"><
 function Planos(){return <div className="content"><div className="plans-intro"><span className="eyebrow">ESCOLHA SEU ACESSO</span><h2>Mais conhecimento, sem limitar sua criação.</h2><p>Os planos são ativados manualmente após a solicitação.</p></div><div className="plans-grid"><article className="plan-card"><span>GRATUITO</span><h3>R$ 0</h3><p>Para começar</p><ul><li>20 créditos iniciais</li><li>Pesquisa na biblioteca</li><li>Seleção de conhecimentos</li></ul><button>Plano atual</button></article><article className="plan-card featured"><span>PLUS</span><h3>R$ 15</h3><p>7 dias de acesso</p><ul><li>Geração ilimitada</li><li>Exportações ilimitadas</li><li>Ativação manual</li></ul><button>Solicitar Plus →</button></article><article className="plan-card"><span>MENSAL</span><h3>R$ 49</h3><p>1 mês de acesso</p><ul><li>Geração ilimitada</li><li>Exportações ilimitadas</li><li>Ativação manual</li></ul><button>Solicitar mensal →</button></article></div></div>}
 
 function Admin({setPage}:{setPage:(p:Page)=>void}){return <div className="content"><div className="stats admin-stats"><div><small>USUÁRIOS</small><strong>0</strong><span>Contas cadastradas</span></div><div><small>LIVROS</small><strong>1</strong><span>Na biblioteca</span></div><div><small>CONHECIMENTOS</small><strong>0</strong><span>Prontos para pesquisa</span></div><div><small>PROCESSAMENTO</small><strong>0%</strong><span>Nenhum livro em fila</span></div></div><div className="admin-grid"><section className="panel admin-action"><span>01</span><h3>Biblioteca</h3><p>Gerencie os livros que alimentam o Content Brain.</p><button onClick={()=>setPage("livros")}>Abrir biblioteca →</button></section><section className="panel admin-action"><span>02</span><h3>Conhecimentos</h3><p>Revise os conhecimentos extraídos dos livros.</p><button onClick={()=>setPage("conhecimentos")}>Ver conhecimentos →</button></section><section className="panel admin-action"><span>03</span><h3>Usuários</h3><p>Controle créditos, planos e status das contas.</p><button onClick={()=>setPage("usuarios")}>Gerenciar usuários →</button></section></div></div>}
-function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuarios"}){const cfg={livros:["BIBLIOTECA","Livros cadastrados","Seu acervo de livros será gerenciado aqui."],processamento:["PROCESSAMENTO","Fila de processamento","Acompanhe a extração de páginas e conhecimentos."],conhecimentos:["CONHECIMENTOS","Base de conhecimento","Revise e organize os conhecimentos extraídos."],usuarios:["USUÁRIOS","Usuários cadastrados","Gerencie contas, créditos e planos."]}[type];return <div className="content"><div className="admin-list-head"><div><span className="eyebrow">{cfg[0]}</span><h2>{cfg[1]}</h2><p>{cfg[2]}</p></div><button className="primary-large">{type==="livros"?"Adicionar livro":"Nova ação"} <b>+</b></button></div><div className="panel table-placeholder"><div className="table-head"><span>NOME</span><span>STATUS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div><div className="empty-row"><span>○</span><div><strong>Nenhum registro para exibir</strong><p>Esta área já está preparada para os dados reais do Supabase.</p></div></div></div></div>}
+function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuarios"}) {
+ const [livros,setLivros]=useState<any[]>([]);
+ const [loading,setLoading]=useState(type==="livros"||type==="processamento");
+ const [processing,setProcessing]=useState<string|null>(null);
+ const [progress,setProgress]=useState<Record<string,{done:number,total:number}>>({});
+ const [message,setMessage]=useState("");
+
+ const loadLivros=async()=>{
+   setLoading(true);
+   const {data,error}=await supabase.from("livros").select("id,titulo,autor,status,total_paginas,data_upload,arquivo_path").order("data_upload",{ascending:false,nullsLast:true});
+   if(error) setMessage("Não foi possível carregar a biblioteca.");
+   else setLivros(data||[]);
+   setLoading(false);
+ };
+
+ const processar=async(livro:any)=>{
+   setProcessing(livro.id);
+   setMessage("");
+   let inicio=1;
+   let finished=false;
+   try {
+     while(!finished) {
+       const {data,error}=await supabase.functions.invoke("processar-livro?livro_id="+encodeURIComponent(livro.id)+"&inicio="+inicio+"&limite=25",{body:{}});
+       if(error) throw error;
+       if(!data?.sucesso) throw new Error(data?.erro||"Falha no processamento.");
+       const fim=Number(data.fim||inicio);
+       const total=Number(data.total_paginas||livro.total_paginas||0);
+       setProgress(p=>({...p,[livro.id]:{done:fim,total}}));
+       finished=Boolean(data.concluido);
+       if(!finished) inicio=Number(data.proxima_pagina||fim+1);
+     }
+     setMessage("Processamento concluído.");
+     await loadLivros();
+   } catch(e:any) {
+     setMessage(e?.message||"Não foi possível processar o livro.");
+     await loadLivros();
+   } finally {
+     setProcessing(null);
+   }
+ };
+
+ if(type==="livros"||type==="processamento"){
+   if(livros.length===0 && loading) void loadLivros();
+   return <div className="content">
+     <div className="admin-list-head">
+       <div><span className="eyebrow">{type==="livros"?"BIBLIOTECA":"PROCESSAMENTO"}</span><h2>{type==="livros"?"Livros cadastrados":"Fila de processamento"}</h2><p>{type==="livros"?"Seu acervo de livros alimenta a base do Content Brain.":"Processe os livros em lotes de até 25 páginas."}</p></div>
+     </div>
+     {message&&<div className="search-error">{message}</div>}
+     {loading?<div className="panel table-placeholder"><div className="empty-row"><span>◌</span><div><strong>Carregando biblioteca...</strong><p>Consultando o Supabase.</p></div></div></div>:
+     <div className="results-list">
+       {livros.map(l=><article className="knowledge-card" key={l.id}>
+         <div className="knowledge-main">
+           <div className="knowledge-meta"><span>{l.status||"SEM STATUS"}</span><span>•</span><span>{l.autor||"Autor não informado"}</span></div>
+           <h3>{l.titulo||"Livro sem título"}</h3>
+           <p className="excerpt">{l.total_paginas?l.total_paginas+" páginas":"Número de páginas ainda não calculado."}</p>
+           {progress[l.id]&&<div className="application"><b>PROGRESSO</b><span>{progress[l.id].done} de {progress[l.id].total} páginas ({progress[l.id].total?Math.round(progress[l.id].done/progress[l.id].total*100):0}%)</span></div>}
+           <small>{l.arquivo_path||"Arquivo não informado"}</small>
+         </div>
+         <div>
+           {(l.status==="Pendente"||l.status==="Processando")&&<button className="primary-large" disabled={processing===l.id} onClick={()=>processar(l)}>{processing===l.id?"Processando...":"Processar livro →"}</button>}
+           {l.status==="Processado"&&<span className="status-ok">Processado ✓</span>}
+         </div>
+       </article>)}
+     </div>}
+   </div>;
+ }
+
+ const cfg={conhecimentos:["CONHECIMENTOS","Base de conhecimento","Revise e organize os conhecimentos extraídos."],usuarios:["USUÁRIOS","Usuários cadastrados","Gerencie contas, créditos e planos."]}[type];
+ return <div className="content"><div className="admin-list-head"><div><span className="eyebrow">{cfg[0]}</span><h2>{cfg[1]}</h2><p>{cfg[2]}</p></div><button className="primary-large">Nova ação <b>+</b></button></div><div className="panel table-placeholder"><div className="table-head"><span>NOME</span><span>STATUS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div><div className="empty-row"><span>○</span><div><strong>Nenhum registro para exibir</strong><p>Esta área já está preparada para os dados reais do Supabase.</p></div></div></div></div>;
+}
 
 function Landing({open}:{open:(t:"login"|"signup")=>void}) {
  return <div className="page"><header className="header"><Logo/><nav><a href="#como">Como funciona</a><a href="#conhecimento">Conhecimento</a><a href="#recursos">Recursos</a></nav><button className="btn btn-outline" onClick={()=>open("login")}>Fazer login</button></header><main><section className="hero"><div className="hero-copy"><div className="eyebrow"><span className="dot"/> BIBLIOTECA INTELIGENTE DE CONHECIMENTO</div><h1>Transforme livros em <em>conhecimento aplicável.</em></h1><p>Pesquise ideias, princípios e técnicas dentro de uma biblioteca selecionada de livros de negócios — e encontre conhecimento organizado para colocar em prática.</p><div className="actions"><button className="btn btn-primary" onClick={()=>open("signup")}>Cadastre-se grátis <span>→</span></button><button className="btn btn-link" onClick={()=>open("login")}>Já tenho uma conta</button></div><div className="trust"><span>✓</span> Comece com 20 créditos gratuitos</div></div><div className="preview-shell"><div className="preview-top"><span className="window-dot"/><span className="window-dot"/><span className="window-dot"/><span className="credits">20 créditos</span></div><div className="search-box"><span>⌕</span><span className="placeholder">O que você quer aprender?</span><kbd>⌘ K</kbd></div><div className="result-label">CONHECIMENTOS ENCONTRADOS</div>{results.slice(0,2).map(e=><div className="result" key={e.title}><div className="result-tag">{e.type}</div><h3>{e.title}</h3><p>{e.book}</p><div className="result-arrow">↗</div></div>)}<div className="more">+ procurar mais resultados</div></div></section><section id="como" className="steps"><div><span>01</span><h2>Pesquise</h2><p>Digite um tema, técnica ou princípio que deseja estudar.</p></div><div><span>02</span><h2>Selecione</h2><p>Encontre e organize os conhecimentos relevantes da biblioteca.</p></div><div><span>03</span><h2>Aplique</h2><p>Use os conhecimentos selecionados para criar e tomar decisões.</p></div></section><section id="conhecimento" className="statement"><p>Uma biblioteca feita para quem quer sair da informação e chegar à <strong>aplicação.</strong></p></section></main></div>;
