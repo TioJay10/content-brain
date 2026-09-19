@@ -1219,3 +1219,14 @@
   border-color:#5149d8 !important;
   color:#a49cff !important;
 }
+
+
+/* CAMPO QTD — BORDA VERMELHA */
+.table-placeholder .admin-user-actions .credit-add-group input{
+  border-color:#dc2626 !important;
+}
+.table-placeholder .admin-user-actions .credit-add-group input:focus{
+  border-color:#dc2626 !important;
+  box-shadow:0 0 0 2px #dc262622;
+  outline:none;
+}
