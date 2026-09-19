@@ -754,3 +754,103 @@
   .admin-list-head h2{font-size:23px;}
   .admin-user-actions .user-status-button{flex-basis:100%;}
 }
+
+/* CORREÇÃO FINAL — USUÁRIOS NO MOBILE */
+@media (max-width:700px){
+  .table-placeholder{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .table-placeholder .table-row{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    padding:15px;
+    margin:0;
+    overflow:hidden;
+  }
+  .table-placeholder .table-row>span{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    overflow:visible;
+  }
+  .table-placeholder .table-row>span:last-child{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .table-placeholder .admin-user-actions{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    display:grid;
+    grid-template-columns:34px 34px 34px 1fr;
+    gap:6px;
+    box-sizing:border-box;
+  }
+  .table-placeholder .admin-user-actions .credit-minus,
+  .table-placeholder .admin-user-actions .credit-number,
+  .table-placeholder .admin-user-actions .credit-plus{
+    width:34px;
+    min-width:34px;
+    max-width:34px;
+    box-sizing:border-box;
+  }
+  .table-placeholder .admin-user-actions .credit-add-group{
+    grid-column:1 / -1;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    display:flex;
+    box-sizing:border-box;
+  }
+  .table-placeholder .admin-user-actions .credit-add-group input{
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  .table-placeholder .admin-user-actions .credit-add-button{
+    flex:0 0 auto;
+    width:auto;
+    min-width:88px;
+  }
+  .table-placeholder .admin-user-actions .plan-select{
+    grid-column:1 / -1;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  .table-placeholder .admin-user-actions .user-status-button{
+    grid-column:1 / -2;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+  .table-placeholder .admin-user-actions .user-delete-button{
+    grid-column:-2 / -1;
+    width:34px;
+    min-width:34px;
+  }
+}
+@media (max-width:380px){
+  .table-placeholder .admin-user-actions{
+    grid-template-columns:32px 32px 32px 1fr;
+    gap:5px;
+  }
+  .table-placeholder .admin-user-actions .credit-minus,
+  .table-placeholder .admin-user-actions .credit-number,
+  .table-placeholder .admin-user-actions .credit-plus{
+    width:32px;
+    min-width:32px;
+    max-width:32px;
+  }
+}
