@@ -886,3 +886,29 @@
     height:38px;
   }
 }
+
+/* SAIR DO ADMINISTRADOR — MENU HAMBÚRGUER */
+.mobile-admin-logout{display:none;}
+.sidebar-logout{border:0;background:transparent;color:#777;cursor:pointer;font:inherit;font-size:11px;font-weight:800;display:flex;align-items:center;gap:5px;padding:7px 9px;border-radius:7px;}
+.sidebar-logout:hover{background:#f4f3f8;color:#5149d8;}
+@media(max-width:700px){
+  .mobile-admin-logout{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    width:calc(100% - 32px);
+    min-height:46px;
+    margin:14px 16px 8px;
+    padding:0 18px;
+    border:1px solid #e6e4ed;
+    border-radius:9px;
+    background:#fff;
+    color:#55525f;
+    font-size:12px;
+    font-weight:800;
+    text-align:left;
+  }
+  .mobile-admin-logout span{font-size:18px;line-height:1;}
+  .mobile-admin-logout:active{background:#f5f3ff;color:#5149d8;}
+  .sidebar.mobile-open .sidebar-user{display:none;}
+}
