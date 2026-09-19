@@ -85,47 +85,57 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
  const [searched,setSearched]=useState(false);
  const [error,setError]=useState("");
  const search=async()=>{
+   if(loading)return;
    setLoading(true); setError("");
    const term=query.trim();
    if(!term){ setError("Digite um tema, técnica ou princípio para pesquisar."); setSearched(false); setLoading(false); return; }
 
-   const {data:consumo,error:consumoError}=await supabase.rpc("consumir_credito_e_registrar_pesquisa",{p_consulta:term,p_resultados:0});
-   if(consumoError){
-     if(consumoError.message?.includes("CRÉDITOS_INSUFICIENTES")) setError("Você ficou sem créditos. Escolha um plano para continuar pesquisando.");
-     else setError("Não foi possível iniciar a pesquisa agora.");
-     setItems([]); setSearched(false); setLoading(false); return;
-   }
-   const pesquisaId=consumo?.pesquisa_id as string | undefined;
+   try {
+     const {data:consumo,error:consumoError}=await supabase.rpc("consumir_credito_e_registrar_pesquisa",{p_consulta:term,p_resultados:0});
+     if(consumoError){
+       if(consumoError.message?.includes("CRÉDITOS_INSUFICIENTES")) setError("Você ficou sem créditos. Escolha um plano para continuar pesquisando.");
+       else setError(consumoError.message||"Não foi possível iniciar a pesquisa agora.");
+       setItems([]); setSearched(false); return;
+     }
 
-   const termos=term.toLowerCase().split(/\\s+/).filter(Boolean);
-   const consultas=termos.map(t=>Promise.all([
-     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("titulo","%"+t+"%").limit(40),
-     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("tema","%"+t+"%").limit(40),
-     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("trecho","%"+t+"%").limit(40),
-     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("conteudo","%"+t+"%").limit(40)
-   ]));
-   const lotes=await Promise.all(consultas);
-   const erro=lotes.flat().find((x:any)=>x.error)?.error;
-   if(erro){ setError("A pesquisa foi registrada, mas não foi possível carregar os conhecimentos."); setItems([]); }
-   else {
-     const base=Array.from(new Map(lotes.flat().flatMap((grupo:any)=>grupo.flatMap((x:any)=>x.data||[])).map((r:any)=>[r.id,r])).values()).slice(0,40);
-     const paginaIds=base.map((r:any)=>r.pagina_id).filter(Boolean);
-     const livroIds=base.map((r:any)=>r.livro_id).filter(Boolean);
-     const [{data:paginas},{data:livros}]=await Promise.all([
-       paginaIds.length?supabase.from("paginas").select("id,numero_pagina").in("id",paginaIds):Promise.resolve({data:[]}),
-       livroIds.length?supabase.from("livros").select("id,titulo,autor").in("id",livroIds):Promise.resolve({data:[]})
-     ]);
-     const pm=new Map((paginas||[]).map((p:any)=>[p.id,p.numero_pagina]));
-     const lm=new Map((livros||[]).map((l:any)=>[l.id,l]));
-     const mapped=base.map((r:any)=>({id:r.id,titulo:r.titulo,tipo:r.tipo,tema:r.tema,trecho:r.trecho,conteudo:r.conteudo,analise_aplicacao:r.analise_aplicacao,relevancia:r.relevancia,pagina:pm.get(r.pagina_id)??null,livro:lm.get(r.livro_id)?.titulo??"Livro não informado",autor:lm.get(r.livro_id)?.autor??"Autor não informado"}));
+     const pesquisaId=consumo?.pesquisa_id as string | undefined;
+     const {data,error:searchError}=await supabase.rpc("buscar_conhecimentos",{p_consulta:term});
+
+     if(searchError){
+       setError(searchError.message||"Não foi possível carregar os conhecimentos.");
+       setItems([]);
+       setSearched(true);
+       return;
+     }
+
+     const mapped=(data||[]).map((r:any)=>({
+       id:r.id,
+       titulo:r.titulo,
+       tipo:r.tipo,
+       tema:r.tema,
+       trecho:r.trecho,
+       conteudo:r.conteudo,
+       analise_aplicacao:r.analise_aplicacao,
+       relevancia:r.relevancia,
+       pagina:r.pagina??null,
+       livro:r.livro??"Livro não informado",
+       autor:r.autor??"Autor não informado"
+     })) as Knowledge[];
+
      setItems(mapped);
+     setSearched(true);
      if(pesquisaId) await supabase.from("pesquisas").update({resultados:mapped.length}).eq("id",pesquisaId);
+   } catch(e:any) {
+     setError(e?.message||"Não foi possível concluir a pesquisa.");
+     setItems([]);
+     setSearched(true);
+   } finally {
+     setLoading(false);
    }
-   setSearched(true); setLoading(false);
  };
  return <div className="content">
    <section className="search-page-head">
-     <div className="search-input-large"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")search()}} placeholder="Digite um tema, técnica ou princípio..." /><button onClick={()=>{setQuery("");setItems([]);setSearched(false)}}>×</button></div>
+     <div className="search-input-large"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")search()}} placeholder="Digite um tema, técnica ou princípio..." /><button onClick={()=>{setQuery("");setItems([]);setSearched(false);setError("")}}>×</button></div>
      <button className="primary-large" onClick={search}>{loading?"Buscando...":"Pesquisar"}</button>
    </section>
    <div className="results-toolbar"><span>{searched ? items.length+" conhecimentos encontrados" : "Pesquise na biblioteca"}</span><div><button>Filtrar</button><button>Mais relevantes⌄</button></div></div>
@@ -148,7 +158,6 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
    {selected.length>0 && <div className="selection-bar"><span><b>{selected.length}</b> conhecimentos selecionados</span><button onClick={()=>setPage("selecionados")}>Revisar seleção →</button></div>}
  </div>;
 }
-
 function Selecionados({setPage, selected, setSelected}:{setPage:(p:Page)=>void; selected:Knowledge[]; setSelected:(items:Knowledge[])=>void}) {
  const [copied,setCopied]=useState(false);
  const [loading,setLoading]=useState(true);
