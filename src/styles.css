@@ -947,3 +947,20 @@
   .mobile-admin-logout:hover span{color:#5b53ed;border-color:#c9c5ed;}
   .mobile-admin-logout:active{background:transparent;color:#4f4b58;transform:translateX(1px);}
 }
+
+/* ÍCONE DE SAÍDA — refinamento */
+@media(max-width:700px){
+  .mobile-admin-logout .logout-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:22px;
+    height:22px;
+    border:0;
+    border-radius:0;
+    color:#77747f;
+    flex:0 0 22px;
+  }
+  .mobile-admin-logout .logout-icon svg{width:19px;height:19px;display:block;}
+  .mobile-admin-logout:hover .logout-icon{color:#5b53ed;}
+}
