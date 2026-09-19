@@ -19,7 +19,7 @@ function Logo() {
 function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Page) => void; admin?: boolean }) {
   const items = admin
     ? [["admin","Visão geral"],["livros","Biblioteca"],["processamento","Processamento"],["conhecimentos","Conhecimentos"],["usuarios","Usuários"]] as [Page,string][]
-    : [["dashboard","Início"],["pesquisa","Pesquisar"],["selecionados","Selecionados"],["ideias","Ideias de conteúdo"],["gerar","Gerar conteúdo"],["historico","Histórico"]] as [Page,string][];
+    : [["dashboard","Início"],["pesquisa","Pesquisar"],["selecionados","Selecionados"],["ideias","Ideias de conteúdo"],["historico","Histórico"]] as [Page,string][];
   return <aside className="sidebar">
     <Logo />
     <div className="side-section">{admin ? "ADMINISTRAÇÃO" : "CONTENT BRAIN"}</div>
@@ -37,7 +37,7 @@ function Topbar({ title, setPage }: { title: string; setPage: (p:Page)=>void }) 
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
-  const titles: Record<string,string> = {dashboard:"Início",pesquisa:"Pesquisar conhecimento",selecionados:"Conhecimentos selecionados",ideias:"Ideias de conteúdo",gerar:"Gerar conteúdo",historico:"Histórico",conta:"Minha conta",planos:"Planos"};
+  const titles: Record<string,string> = {dashboard:"Início",pesquisa:"Pesquisar conhecimento",selecionados:"Conhecimentos selecionados",ideias:"Ideias de conteúdo",historico:"Histórico",conta:"Minha conta",planos:"Planos"};
   return <div className="app-shell"><SideNav page={page} setPage={setPage}/><main className="workspace"><Topbar title={titles[page] || "Content Brain"} setPage={setPage}/>{children}</main></div>;
 }
 
@@ -73,10 +73,6 @@ function Ideas({setPage}:{setPage:(p:Page)=>void}) {
  return <div className="content"><div className="section-intro"><div><span className="eyebrow">A PARTIR DO CONHECIMENTO</span><h2>Ideias para transformar conhecimento em conteúdo.</h2><p>Use os conhecimentos selecionados como ponto de partida.</p></div></div><div className="idea-grid">{ideas.map((x,i)=><article className="idea-card" key={x}><span>0{i+1}</span><h3>{x}</h3><p>Uma possibilidade de conteúdo construída a partir dos conhecimentos da biblioteca.</p><button onClick={()=>setPage("gerar")}>Usar esta ideia →</button></article>)}</div></div>
 }
 
-function Gerar({setPage}:{setPage:(p:Page)=>void}) {
- return <div className="content"><div className="generator-grid"><section className="panel generator-form"><span className="eyebrow">CONTENT BRAIN / IA</span><h2>Transforme conhecimento em conteúdo.</h2><label>O que você quer criar?<textarea placeholder="Ex.: Crie um roteiro de Reels sobre técnicas de vendas..."/></label><div className="form-row"><label>Formato<select><option>Roteiro de vídeo</option><option>Post para Instagram</option><option>Artigo</option><option>Carrossel</option></select></label><label>Tom<select><option>Profissional</option><option>Direto</option><option>Educativo</option></select></label></div><div className="selected-source"><b>CONHECIMENTOS UTILIZADOS</b><span>3 conhecimentos selecionados</span></div><button className="primary-large">Gerar conteúdo <b>→</b></button></section><section className="panel output-placeholder"><span>RESULTADO</span><div className="placeholder-line wide"/><div className="placeholder-line"/><div className="placeholder-line"/><p>O conteúdo gerado aparecerá aqui.</p></section></div></div>
-}
-
 function Historico(){return <div className="content"><div className="panel history-panel"><div className="panel-label">ATIVIDADE RECENTE</div><div className="empty-row"><span>◷</span><div><strong>Nenhuma atividade ainda</strong><p>Suas pesquisas e conteúdos gerados aparecerão aqui.</p></div></div></div></div>}
 function Conta(){return <div className="content"><div className="account-grid"><section className="panel account-card"><div className="profile-avatar">J</div><h2>Minha conta</h2><p>Gerencie seus dados e acompanhe seu plano.</p><label>Nome<input placeholder="Seu nome"/></label><label>E-mail<input placeholder="seu@email.com" disabled/></label><button className="primary-large">Salvar alterações</button></section><section className="panel account-plan"><span className="eyebrow">PLANO ATUAL</span><h2>Gratuito</h2><strong>20 créditos</strong><p>Comece explorando a biblioteca. Quando precisar de mais recursos, escolha um plano.</p><button onClick={()=>location.hash="planos"}>Ver planos →</button></section></div></div>}
 function Planos(){return <div className="content"><div className="plans-intro"><span className="eyebrow">ESCOLHA SEU ACESSO</span><h2>Mais conhecimento, sem limitar sua criação.</h2><p>Os planos são ativados manualmente após a solicitação.</p></div><div className="plans-grid"><article className="plan-card"><span>GRATUITO</span><h3>R$ 0</h3><p>Para começar</p><ul><li>20 créditos iniciais</li><li>Pesquisa na biblioteca</li><li>Seleção de conhecimentos</li></ul><button>Plano atual</button></article><article className="plan-card featured"><span>PLUS</span><h3>R$ 15</h3><p>7 dias de acesso</p><ul><li>Geração ilimitada</li><li>Exportações ilimitadas</li><li>Ativação manual</li></ul><button>Solicitar Plus →</button></article><article className="plan-card"><span>MENSAL</span><h3>R$ 49</h3><p>1 mês de acesso</p><ul><li>Geração ilimitada</li><li>Exportações ilimitadas</li><li>Ativação manual</li></ul><button>Solicitar mensal →</button></article></div></div>}
@@ -96,7 +92,7 @@ export default function App(){
  const open=(t:"login"|"signup")=>setModal(t);
  if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}<button className="dev-preview" onClick={()=>{setMode("user");setPage("dashboard")}}>Pré-visualizar app</button></>;
  if(mode==="admin") return <AdminLayout page={page} setPage={setPage}>{page==="admin"?<Admin setPage={setPage}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
- return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage}/>:page==="selecionados"?<Selecionados setPage={setPage}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="gerar"?<Gerar setPage={setPage}/>:page==="historico"?<Historico/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
+ return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage}/>:page==="selecionados"?<Selecionados setPage={setPage}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
 }
 
 function AuthModal({type,close,onEnter}:{type:"login"|"signup";close:()=>void;onEnter:(admin:boolean)=>void}){
