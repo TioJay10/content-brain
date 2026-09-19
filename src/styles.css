@@ -311,3 +311,21 @@
 .history-item{width:100%;border:0;text-align:left;background:transparent;cursor:pointer;position:relative;padding-right:40px}
 .history-item:hover{background:#f8f7fc}
 .history-item>b{margin-left:auto;color:#77718e;font-size:16px}
+
+
+/* SELECIONADOS — ações e hierarquia visual */
+.selected-actions{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:18px 0 20px;padding:14px 16px;background:#faf9ff;border:1px solid #e5e2f2;border-radius:12px}
+.selected-count{display:flex;align-items:center;gap:9px;color:#666371;font-size:12px;font-weight:650}
+.selected-count b{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 8px;border-radius:9px;background:#635bff;color:#fff;font-size:15px;box-shadow:0 3px 8px #635bff20}
+.selected-action-buttons{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.selected-actions .secondary-action,.selected-actions .primary-large{min-height:36px}
+.knowledge-card.selected{position:relative;padding-right:52px}
+.remove-selected{width:32px;height:32px;border:1px solid #ead7da!important;border-radius:8px;background:#fff7f7!important;color:#c84b55!important;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;transition:opacity .15s ease,border-color .15s ease,background .15s ease}
+.remove-selected:hover{opacity:.8;border-color:#e0b9be!important;background:#fff1f2!important}
+@media(max-width:700px){
+ .selected-actions{align-items:stretch;padding:12px}
+ .selected-count{width:100%}
+ .selected-action-buttons{width:100%;justify-content:flex-start}
+ .selected-action-buttons button{flex:1 1 auto}
+ .knowledge-card.selected{padding-right:48px}
+}
