@@ -348,6 +348,7 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
    <div className="form-row"><label>Plano<select value={newUser.plano} onChange={e=>setNewUser({...newUser,plano:e.target.value})}><option value="gratuito">Gratuito</option><option value="plus">Plus · 7 dias</option><option value="mensal">Mensal · 30 dias</option></select></label><label>Créditos<input type="number" min="0" value={newUser.creditos} onChange={e=>setNewUser({...newUser,creditos:Number(e.target.value)})}/></label></div>
    <button className="btn btn-primary full" disabled={userActionLoading} onClick={createUser}>{userActionLoading?"Criando...":"Criar usuário"} <span>→</span></button>
  </div></div>}
+ </>}
  </div>;
 }
 
