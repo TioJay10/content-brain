@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "./supabaseClient";
 
 type Page =
@@ -36,7 +36,7 @@ function Topbar({ title, setPage }: { title: string; setPage: (p:Page)=>void }) 
   return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><button className="credit-pill" onClick={()=>setPage("planos")}><b>20</b> créditos <span>+</span></button></header>;
 }
 
-function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:React.ReactNode}) {
+function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
   const titles: Record<string,string> = {dashboard:"Início",pesquisa:"Pesquisar conhecimento",selecionados:"Conhecimentos selecionados",ideias:"Ideias de conteúdo",gerar:"Gerar conteúdo",historico:"Histórico",conta:"Minha conta",planos:"Planos"};
   return <div className="app-shell"><SideNav page={page} setPage={setPage}/><main className="workspace"><Topbar title={titles[page] || "Content Brain"} setPage={setPage}/>{children}</main></div>;
 }
