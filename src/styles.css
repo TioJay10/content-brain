@@ -1102,3 +1102,45 @@
   .theme-icon{font-size:17px;}
   .topbar:has(.admin-top-badge) .theme-toggle{flex:0 0 38px;}
 }
+
+
+/* MODO NOTURNO — BOTÕES MANTÊM A SUPERFÍCIE CLARA */
+:root[data-theme="dark"] .btn-outline,
+:root[data-theme="dark"] .secondary-action,
+:root[data-theme="dark"] .results-toolbar button,
+:root[data-theme="dark"] .more-results button,
+:root[data-theme="dark"] .plan-card button,
+:root[data-theme="dark"] .remove-selected{
+  background:#fff;
+  border-color:#dedee6;
+  color:#666671;
+}
+
+:root[data-theme="dark"] .btn-outline:hover,
+:root[data-theme="dark"] .secondary-action:hover,
+:root[data-theme="dark"] .results-toolbar button:hover,
+:root[data-theme="dark"] .more-results button:hover,
+:root[data-theme="dark"] .plan-card button:hover,
+:root[data-theme="dark"] .remove-selected:hover{
+  background:#f7f7fa;
+  border-color:#bdb9d0;
+  color:#5149d8;
+}
+
+/* Controles administrativos: superfície clara, texto adaptado */
+:root[data-theme="dark"] .credit-minus,
+:root[data-theme="dark"] .credit-plus,
+:root[data-theme="dark"] .user-status-button,
+:root[data-theme="dark"] .user-delete-button{
+  background:#fff;
+  border-color:#dedee6;
+  color:#666671;
+}
+
+:root[data-theme="dark"] .credit-minus:hover,
+:root[data-theme="dark"] .credit-plus:hover,
+:root[data-theme="dark"] .user-status-button:hover,
+:root[data-theme="dark"] .user-delete-button:hover{
+  background:#f7f7fa;
+  color:#5149d8;
+}
