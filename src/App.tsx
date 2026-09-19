@@ -97,13 +97,18 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
    }
    const pesquisaId=consumo?.pesquisa_id as string | undefined;
 
-   let request=supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id");
-   const filtros=term.split(/\\s+/).filter(Boolean).map((t:string)=>"titulo.ilike.%"+t+"%,tema.ilike.%"+t+"%,trecho.ilike.%"+t+"%,conteudo.ilike.%"+t+"%");
-   if(filtros.length) request=request.or(filtros.join(","));
-   const {data,error}=await request.order("relevancia",{ascending:false,nullsLast:true}).limit(40);
-   if(error){ setError("A pesquisa foi registrada, mas não foi possível carregar os conhecimentos."); setItems([]); }
+   const termos=term.toLowerCase().split(/\\s+/).filter(Boolean);
+   const consultas=termos.map(t=>Promise.all([
+     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("titulo","%"+t+"%").limit(40),
+     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("tema","%"+t+"%").limit(40),
+     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("trecho","%"+t+"%").limit(40),
+     supabase.from("conhecimentos").select("id,titulo,tipo,tema,trecho,conteudo,analise_aplicacao,relevancia,pagina_id,livro_id").ilike("conteudo","%"+t+"%").limit(40)
+   ]));
+   const lotes=await Promise.all(consultas);
+   const erro=lotes.flat().find((x:any)=>x.error)?.error;
+   if(erro){ setError("A pesquisa foi registrada, mas não foi possível carregar os conhecimentos."); setItems([]); }
    else {
-     const base=data||[];
+     const base=Array.from(new Map(lotes.flat().flatMap((grupo:any)=>grupo.flatMap((x:any)=>x.data||[])).map((r:any)=>[r.id,r])).values()).slice(0,40);
      const paginaIds=base.map((r:any)=>r.pagina_id).filter(Boolean);
      const livroIds=base.map((r:any)=>r.livro_id).filter(Boolean);
      const [{data:paginas},{data:livros}]=await Promise.all([
