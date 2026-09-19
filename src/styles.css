@@ -13,3 +13,49 @@
 .remove-selected:hover{background:#eeeef4;color:#555}
 @media(max-width:700px){.selected-actions{align-items:flex-start;flex-direction:column;gap:12px}.selected-actions>div{width:100%;justify-content:flex-end}}
 .search-input-large input{border:0;outline:0;background:transparent;flex:1;font:inherit;font-size:13px;color:#33333a;min-width:0}.search-input-large input::placeholder{color:#9999a4}.search-error{background:#fff4f4;border:1px solid #f0d2d2;color:#a34a4a;border-radius:9px;padding:12px 14px;font-size:11px;margin-bottom:14px}.search-empty{background:#fff;border:1px dashed #dddde5;border-radius:12px;padding:60px 25px;text-align:center;margin-bottom:15px}.search-empty h2{font-size:20px;margin:0 0 8px}.search-empty p{font-size:12px;color:#888;max-width:480px;margin:0 auto;line-height:1.6}.search-empty .empty-mark{margin-bottom:14px}
+/* POLIMENTO DE ACESSO, CRÉDITOS E ADMIN */
+.credit-pill{display:flex;align-items:center;gap:9px;padding:8px 12px 8px 8px;border:1px solid #dedcf0;background:linear-gradient(135deg,#fff,#f7f5ff);border-radius:12px;box-shadow:0 5px 18px #635bff12;min-width:142px;text-align:left}
+.credit-pill .credit-icon{width:28px;height:28px;border-radius:8px;background:#635bff;color:#fff;display:grid;place-items:center;font-size:13px;box-shadow:0 5px 12px #635bff35}
+.credit-pill b{display:block;color:#24222f;font-size:12px;line-height:1.1}
+.credit-pill i{font-style:normal;color:#635bff;font-size:8px;font-weight:800;letter-spacing:.4px;margin-left:auto}
+.credit-pill:hover{border-color:#bcb6ff;transform:translateY(-1px)}
+
+.google-login{width:100%;height:46px;border:1px solid #dddde5;background:#fff;color:#292930;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 3px 12px #17171b08;transition:.18s}
+.google-login:hover{border-color:#c7c5d2;background:#fbfbfd;box-shadow:0 7px 18px #17171b0d;transform:translateY(-1px)}
+.google-login:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.google-mark{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:850;background:#fff;border:1px solid #ececf1;color:#4285f4;box-shadow:0 2px 6px #00000010}
+.oauth-divider{display:flex;align-items:center;gap:10px;margin:18px 0 2px;color:#aaa;font-size:10px}
+.oauth-divider:before,.oauth-divider:after{content:"";height:1px;background:#ececf1;flex:1}
+
+.admin-list-head{gap:20px}
+.admin-add-user{border:1px solid #d8d5ff;background:#f7f6ff;color:#5149d8;border-radius:9px;padding:11px 14px;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 5px 15px #635bff0c}
+.admin-add-user span{font-size:16px;line-height:10px}
+.admin-add-user:hover{background:#efedff;border-color:#bdb8ff;transform:translateY(-1px)}
+.admin-user-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap}
+.admin-user-actions button{border:1px solid #e0e0e7;background:#fff;color:#666671;border-radius:7px;height:30px;min-width:30px;padding:0 8px;font-size:11px;font-weight:800;cursor:pointer}
+.admin-user-actions button:disabled{opacity:.45;cursor:not-allowed}
+.credit-minus{color:#a04b4b!important;background:#fff8f8!important;border-color:#efd7d7!important}
+.credit-plus{color:#4d47cf!important;background:#f7f6ff!important;border-color:#d8d5ff!important}
+.credit-number{min-width:26px;text-align:center;font-size:10px;font-weight:800;color:#24242b}
+.plan-select{height:30px;border:1px solid #e0e0e7;background:#fff;border-radius:7px;padding:0 7px;font-size:9px;color:#555560;outline:none}
+.plan-select:focus{border-color:#bdb8ff}
+.user-status-button{min-width:64px!important}
+.user-delete-button{color:#a04b4b!important;background:#fff7f7!important;border-color:#efd5d5!important}
+.admin-user-modal{width:min(500px,100%)}
+.admin-user-modal .eyebrow{display:block;margin-bottom:7px}
+.admin-user-modal .form-row{margin-top:4px}
+.admin-user-modal select{display:block;width:100%;margin-top:7px;padding:11px;border:1px solid #dedee6;border-radius:8px;background:#fff;font:inherit;font-size:13px}
+.admin-user-modal input[type=number]{appearance:textfield}
+
+@media(max-width:1000px){
+ .admin-user-actions{justify-content:flex-start}
+ .table-head,.table-row{grid-template-columns:1.7fr 1fr 1fr 1.4fr}
+}
+@media(max-width:700px){
+ .credit-pill{min-width:auto}
+ .credit-pill i{display:none}
+ .admin-list-head{width:100%}
+ .admin-add-user{width:100%;justify-content:center}
+ .admin-user-actions{justify-content:flex-start}
+ .plan-select{flex:1;min-width:120px}
+}
