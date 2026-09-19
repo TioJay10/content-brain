@@ -994,8 +994,8 @@
 :root[data-theme="dark"] .breadcrumb{color:#777781;}
 :root[data-theme="dark"] .breadcrumb span{color:#8d84ff;}
 :root[data-theme="dark"] .topbar h1{color:#f0f0f4;}
-:root[data-theme="dark"] .theme-toggle{background:#202026;border-color:#383840;color:#c2c1ca;}
-:root[data-theme="dark"] .theme-toggle:hover{border-color:#5b53ed;background:#272443;color:#a49cff;}
+:root[data-theme="dark"] .theme-toggle{background:#f7f7f9;border-color:#d8d6df;color:#5e5d68;}
+:root[data-theme="dark"] .theme-toggle:hover{border-color:#d8d6df;background:#f7f7f9;color:#5149d8;}
 :root[data-theme="dark"] .credit-pill{background:#1b1b24;border-color:#34343d;color:#aaa9b4;}
 :root[data-theme="dark"] .credit-pill b,
 :root[data-theme="dark"] .credit-pill span{color:#958cff;}
