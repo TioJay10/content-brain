@@ -99,3 +99,26 @@
  .admin-user-actions button{height:34px}
  .admin-user-actions .credit-number{min-width:28px;align-items:center;justify-content:center}
 }
+
+/* CONTROLES DE CRÉDITOS DO ADMIN */
+.admin-user-actions button{transition:all .16s ease;box-shadow:0 2px 6px #17171b06}
+.admin-user-actions button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 5px 12px #17171b10}
+.admin-user-actions .credit-minus,.admin-user-actions .credit-plus{width:32px;min-width:32px;height:32px;border-radius:8px;font-size:15px}
+.admin-user-actions .credit-minus:hover:not(:disabled){background:#fff0f0!important;border-color:#e5bcbc!important}
+.admin-user-actions .credit-plus:hover:not(:disabled){background:#eeecff!important;border-color:#bdb8ff!important}
+.credit-add-group{display:flex;align-items:center;gap:4px;background:#f8f8fb;border:1px solid #e3e3e9;border-radius:8px;padding:3px;min-height:38px}
+.credit-add-group input{width:52px;height:30px;border:0;background:transparent;outline:0;text-align:center;font-size:10px;font-weight:700;color:#303039;padding:0}
+.credit-add-group input::placeholder{color:#aaaab3}
+.credit-add-group input::-webkit-inner-spin-button,.credit-add-group input::-webkit-outer-spin-button{margin:0}
+.credit-add-button{height:30px!important;border:0!important;background:#635bff!important;color:#fff!important;border-radius:6px!important;padding:0 9px!important;font-size:9px!important;box-shadow:0 4px 10px #635bff25!important}
+.credit-add-button:hover:not(:disabled){background:#554de8!important}
+.credit-add-button:disabled{background:#d9d8e4!important;color:#fff!important}
+.admin-user-actions .plan-select{height:32px;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px #17171b06}
+.admin-user-actions .user-status-button{height:32px!important;border-radius:8px!important;background:#fafaff!important;color:#5149d8!important;border-color:#d8d5ff!important}
+.admin-user-actions .user-status-button:hover:not(:disabled){background:#efedff!important}
+.admin-user-actions .user-delete-button{width:32px;min-width:32px;height:32px!important;border-radius:8px!important}
+@media(max-width:700px){
+ .credit-add-group{flex:1 1 170px;min-width:165px}
+ .credit-add-group input{flex:1;width:auto}
+ .credit-add-button{flex:0 0 auto}
+}
