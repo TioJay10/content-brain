@@ -230,6 +230,10 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  const [showUserForm,setShowUserForm]=useState(false);
  const [newUser,setNewUser]=useState({nome:"",email:"",password:"",plano:"gratuito",creditos:20});
  const [userActionLoading,setUserActionLoading]=useState(false);
+ const [showBookForm,setShowBookForm]=useState(false);
+ const [bookUploading,setBookUploading]=useState(false);
+ const [newBook,setNewBook]=useState({titulo:"",autor:""});
+ const [bookFile,setBookFile]=useState<File|null>(null);
 
  const loadLivros=async()=>{
    setLoading(true);
@@ -237,6 +241,24 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
    if(error) setMessage("Não foi possível carregar a biblioteca.");
    else setLivros(data||[]);
    setLoading(false);
+ };
+
+ const uploadBook=async()=>{
+   if(!bookFile){setMessage("Selecione um arquivo PDF.");return;}
+   if(bookFile.type!=="application/pdf" && !bookFile.name.toLowerCase().endsWith(".pdf")){setMessage("A biblioteca aceita apenas arquivos PDF.");return;}
+   setBookUploading(true);setMessage("");
+   try{
+     const safeName=bookFile.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+     const path=Date.now()+"_"+safeName;
+     const {error:uploadError}=await supabase.storage.from("livros").upload(path,bookFile,{contentType:"application/pdf",upsert:false});
+     if(uploadError) throw uploadError;
+     const titulo=newBook.titulo.trim() || bookFile.name.replace(/\.pdf$/i,"");
+     const {error:insertError}=await supabase.from("livros").insert({titulo,autor:newBook.autor.trim()||null,status:"Pendente",data_upload:new Date().toISOString().slice(0,10),arquivo_path:path});
+     if(insertError){await supabase.storage.from("livros").remove([path]);throw insertError;}
+     setShowBookForm(false);setNewBook({titulo:"",autor:""});setBookFile(null);setMessage("Livro adicionado à biblioteca. Agora você pode processá-lo.");
+     await loadLivros();
+   }catch(e:any){setMessage(e?.message||"Não foi possível adicionar o livro.");}
+   finally{setBookUploading(false);}
  };
 
  const processar=async(livro:any)=>{
@@ -279,6 +301,7 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
    return <div className="content">
      <div className="admin-list-head">
        <div><span className="eyebrow">{type==="livros"?"BIBLIOTECA":"PROCESSAMENTO"}</span><h2>{type==="livros"?"Livros cadastrados":"Fila de processamento"}</h2><p>{type==="livros"?"Seu acervo de livros alimenta a base do Content Brain.":"Processe os livros em lotes de até 25 páginas."}</p></div>
+       {type==="livros"&&<button className="admin-add-user admin-add-book" onClick={()=>setShowBookForm(true)}><span>＋</span> Adicionar livro</button>}
      </div>
      {message&&<div className="search-error">{message}</div>}
      {loading?<div className="panel table-placeholder"><div className="empty-row"><span>◌</span><div><strong>Carregando biblioteca...</strong><p>Consultando o Supabase.</p></div></div></div>:
@@ -297,6 +320,16 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
          </div>
        </article>)}
      </div>}
+     {type==="livros"&&showBookForm&&<div className="modal-backdrop" onClick={()=>!bookUploading&&setShowBookForm(false)}><div className="modal admin-user-modal book-modal" onClick={e=>e.stopPropagation()}>
+       <button className="close" onClick={()=>!bookUploading&&setShowBookForm(false)}>×</button>
+       <div className="modal-logo"><span>content</span><strong>brain</strong></div>
+       <span className="eyebrow">NOVA OBRA</span><h2>Adicionar livro</h2><p>Envie o PDF que fará parte da biblioteca de conhecimento.</p>
+       <label>Título<input value={newBook.titulo} onChange={e=>setNewBook({...newBook,titulo:e.target.value})} placeholder="Título do livro"/></label>
+       <label>Autor<input value={newBook.autor} onChange={e=>setNewBook({...newBook,autor:e.target.value})} placeholder="Nome do autor"/></label>
+       <label>Arquivo PDF<input type="file" accept="application/pdf,.pdf" onChange={e=>setBookFile(e.target.files?.[0]||null)} disabled={bookUploading}/></label>
+       {bookFile&&<div className="book-file-name">Arquivo selecionado: <b>{bookFile.name}</b></div>}
+       <button className="btn btn-primary full" disabled={bookUploading||!bookFile} onClick={uploadBook}>{bookUploading?"Enviando...":"Adicionar livro"} <span>→</span></button>
+     </div></div>}
    </div>;
  }
 
