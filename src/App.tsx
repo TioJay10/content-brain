@@ -48,7 +48,7 @@ function SideNav({ page, setPage, admin = false, mobileOpen = false, onClose = (
         <button className={page==="planos" ? "side-link active" : "side-link"} onClick={()=>navigate("planos")}><span className="side-icon">◇</span>Planos</button>
         <button className={page==="conta" ? "side-link active" : "side-link"} onClick={()=>navigate("conta")}><span className="side-icon">○</span>Minha conta</button>
       </div>}
-      <div className="sidebar-user"><div className="avatar">J</div><div><strong>{admin?"Administrador":"Minha conta"}</strong><small>{admin?"Acesso administrativo":"Acesso ativo"}</small></div><button className="sidebar-logout" title="Sair" onClick={signOut}>↪</button></div>
+      <div className="sidebar-user"><div className="avatar">J</div><div><strong>{admin?"Administrador":"Minha conta"}</strong><small>{admin?"Acesso administrativo":"Acesso ativo"}</small></div><button className="sidebar-logout" title="Sair" onClick={signOut}><span>↪</span> Sair</button></div>
     </aside>
   </>;
 }
