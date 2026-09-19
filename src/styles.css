@@ -1144,3 +1144,18 @@
   background:#f7f7fa;
   color:#5149d8;
 }
+
+
+/* MODAL DE CADASTRO — BOTÕES ACOMPANHAM O MODO NOTURNO */
+:root[data-theme="dark"] .admin-user-modal .btn-outline,
+:root[data-theme="dark"] .admin-user-modal button:not(.close){
+  background:#202027;
+  border-color:#393944;
+  color:#d0cfd7;
+}
+:root[data-theme="dark"] .admin-user-modal .btn-outline:hover,
+:root[data-theme="dark"] .admin-user-modal button:not(.close):hover{
+  background:#292932;
+  border-color:#5149d8;
+  color:#a49cff;
+}
