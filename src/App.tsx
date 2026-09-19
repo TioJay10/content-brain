@@ -32,6 +32,7 @@ function Logo() {
 }
 
 function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Page) => void; admin?: boolean }) {
+  const signOut = async () => { await supabase.auth.signOut(); window.location.reload(); };
   const items = admin
     ? [["admin","Visão geral"],["livros","Biblioteca"],["processamento","Processamento"],["conhecimentos","Conhecimentos"],["usuarios","Usuários"]] as [Page,string][]
     : [["dashboard","Início"],["pesquisa","Pesquisar"],["selecionados","Selecionados"],["ideias","Ideias de conteúdo"],["historico","Histórico"]] as [Page,string][];
@@ -43,7 +44,7 @@ function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Pa
       <button className={page==="planos" ? "side-link active" : "side-link"} onClick={()=>setPage("planos")}><span className="side-icon">◇</span>Planos</button>
       <button className={page==="conta" ? "side-link active" : "side-link"} onClick={()=>setPage("conta")}><span className="side-icon">○</span>Minha conta</button>
     </div>}
-    <div className="sidebar-user"><div className="avatar">J</div><div><strong>Minha conta</strong><small>20 créditos</small></div><span>•••</span></div>
+    <div className="sidebar-user"><div className="avatar">J</div><div><strong>Minha conta</strong><small>Acesso ativo</small></div><button className="sidebar-logout" title="Sair" onClick={signOut}>↪</button></div>
   </aside>;
 }
 
@@ -89,6 +90,8 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
        pagina:r.paginas?.numero_pagina ?? null, livro:r.livros?.titulo ?? "Livro não informado", autor:r.livros?.autor ?? "Autor não informado"
      }));
      setItems(mapped);
+     const {data:{user}}=await supabase.auth.getUser();
+     if(user && term) await supabase.from("pesquisas").insert({usuario_id:user.id,consulta:term,resultados:mapped.length,credito_consumido:false});
    }
    setSearched(true); setLoading(false);
  };
@@ -104,7 +107,7 @@ function Pesquisa({setPage, selected, setSelected}:{setPage:(p:Page)=>void; sele
    {loading && <div className="search-empty"><h2>Consultando a biblioteca...</h2><p>Estamos buscando nos conhecimentos cadastrados no Supabase.</p></div>}
    <div className="results-list">{items.map(r=>{
      const isSelected=selected.some(x=>x.id===r.id);
-     return <article className={isSelected?"knowledge-card selected":"knowledge-card"} key={r.id} onClick={()=>setSelected(isSelected?selected.filter(x=>x.id!==r.id):[...selected,r])}>
+     return <article className={isSelected?"knowledge-card selected":"knowledge-card"} key={r.id} onClick={async()=>{const next=isSelected?selected.filter(x=>x.id!==r.id):[...selected,r];setSelected(next);const {data:{user}}=await supabase.auth.getUser();if(user){if(isSelected) await supabase.from("selecoes").delete().eq("usuario_id",user.id).eq("conhecimento_id",r.id);else await supabase.from("selecoes").insert({usuario_id:user.id,conhecimento_id:r.id});}}}>
        <div className="check">{isSelected?"✓":""}</div><div className="knowledge-main">
          <div className="knowledge-meta"><span>{r.tipo||"CONHECIMENTO"}</span><span>•</span><span>{r.livro}</span>{r.pagina&&<><span>•</span><span>p. {r.pagina}</span></>}</div>
          <h3>{r.titulo||r.tema||"Conhecimento"}</h3><p className="excerpt">“{r.trecho||r.conteudo||"Conteúdo não informado."}”</p>
@@ -133,8 +136,18 @@ function Ideas({setPage}:{setPage:(p:Page)=>void}) {
  return <div className="content"><div className="section-intro"><div><span className="eyebrow">A PARTIR DO CONHECIMENTO</span><h2>Ideias para transformar conhecimento em conteúdo.</h2><p>Use os conhecimentos selecionados como ponto de partida.</p></div></div><div className="idea-grid">{ideas.map((x,i)=><article className="idea-card" key={x}><span>0{i+1}</span><h3>{x}</h3><p>Uma possibilidade de conteúdo construída a partir dos conhecimentos da biblioteca.</p><button onClick={()=>setPage("selecionados")}>Ver conhecimentos →</button></article>)}</div></div>
 }
 
-function Historico(){return <div className="content"><div className="panel history-panel"><div className="panel-label">ATIVIDADE RECENTE</div><div className="empty-row"><span>◷</span><div><strong>Nenhuma atividade ainda</strong><p>Suas pesquisas e conteúdos gerados aparecerão aqui.</p></div></div></div></div>}
-function Conta(){return <div className="content"><div className="account-grid"><section className="panel account-card"><div className="profile-avatar">J</div><h2>Minha conta</h2><p>Gerencie seus dados e acompanhe seu plano.</p><label>Nome<input placeholder="Seu nome"/></label><label>E-mail<input placeholder="seu@email.com" disabled/></label><button className="primary-large">Salvar alterações</button></section><section className="panel account-plan"><span className="eyebrow">PLANO ATUAL</span><h2>Gratuito</h2><strong>20 créditos</strong><p>Comece explorando a biblioteca. Quando precisar de mais recursos, escolha um plano.</p><button onClick={()=>location.hash="planos"}>Ver planos →</button></section></div></div>}
+function Historico(){
+ const [items,setItems]=useState<any[]>([]); const [loading,setLoading]=useState(true);
+ useEffect(()=>{(async()=>{const {data}=await supabase.from("pesquisas").select("id,consulta,resultados,credito_consumido,criado_em").order("criado_em",{ascending:false}).limit(50);setItems(data||[]);setLoading(false);})()},[]);
+ return <div className="content"><div className="panel history-panel"><div className="panel-label">ATIVIDADE RECENTE</div>{loading?<div className="empty-row"><span>◌</span><div><strong>Carregando histórico...</strong><p>Consultando suas pesquisas.</p></div></div>:items.length===0?<div className="empty-row"><span>◷</span><div><strong>Nenhuma atividade ainda</strong><p>Suas pesquisas aparecerão aqui.</p></div></div>:items.map(x=><div className="empty-row" key={x.id}><span>⌕</span><div><strong>{x.consulta}</strong><p>{x.resultados} resultado(s) • {new Date(x.criado_em).toLocaleString("pt-BR")}</p></div></div>)}</div></div>
+}
+function Conta(){
+ const [nome,setNome]=useState(""); const [email,setEmail]=useState(""); const [creditos,setCreditos]=useState(20); const [plano,setPlano]=useState("gratuito"); const [status,setStatus]=useState("");
+ useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;setEmail(user.email||"");const {data}=await supabase.from("usuarios").select("nome,email,creditos,plano").eq("id",user.id).maybeSingle();if(data){setNome(data.nome||"");setCreditos(data.creditos??20);setPlano(data.plano||"gratuito");}})()},[]);
+ const save=async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {error}=await supabase.from("usuarios").update({nome,atualizado_em:new Date().toISOString()}).eq("id",user.id);setStatus(error?error.message:"Dados salvos com sucesso.");};
+ const logout=async()=>{await supabase.auth.signOut();window.location.reload();};
+ return <div className="content"><div className="account-grid"><section className="panel account-card"><div className="profile-avatar">{(nome||email||"J").charAt(0).toUpperCase()}</div><h2>Minha conta</h2><p>Gerencie seus dados e acompanhe seu plano.</p><label>Nome<input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Seu nome"/></label><label>E-mail<input value={email} disabled/></label>{status&&<div className="search-error">{status}</div>}<button className="primary-large" onClick={save}>Salvar alterações</button><button className="secondary-action" onClick={logout}>Sair da conta</button></section><section className="panel account-plan"><span className="eyebrow">PLANO ATUAL</span><h2>{plano==="gratuito"?"Gratuito":plano}</h2><strong>{creditos} créditos</strong><p>Seu plano e seus créditos são controlados pela conta.</p><button onClick={()=>location.hash="planos"}>Ver planos →</button></section></div></div>
+}
 function Planos(){return <div className="content"><div className="plans-intro"><span className="eyebrow">ESCOLHA SEU ACESSO</span><h2>Mais conhecimento, sem limitar sua criação.</h2><p>Os planos são ativados manualmente após a solicitação.</p></div><div className="plans-grid"><article className="plan-card"><span>GRATUITO</span><h3>R$ 0</h3><p>Para começar</p><ul><li>20 créditos iniciais</li><li>Pesquisa na biblioteca</li><li>Seleção de conhecimentos</li></ul><button>Plano atual</button></article><article className="plan-card featured"><span>PLUS</span><h3>R$ 15</h3><p>7 dias de acesso</p><ul><li>Geração ilimitada</li><li>Exportações ilimitadas</li><li>Ativação manual</li></ul><button>Solicitar Plus →</button></article><article className="plan-card"><span>MENSAL</span><h3>R$ 49</h3><p>1 mês de acesso</p><ul><li>Geração ilimitada</li><li>Exportações ilimitadas</li><li>Ativação manual</li></ul><button>Solicitar mensal →</button></article></div></div>}
 
 function Admin({setPage}:{setPage:(p:Page)=>void}){return <div className="content"><div className="stats admin-stats"><div><small>USUÁRIOS</small><strong>0</strong><span>Contas cadastradas</span></div><div><small>LIVROS</small><strong>1</strong><span>Na biblioteca</span></div><div><small>CONHECIMENTOS</small><strong>0</strong><span>Prontos para pesquisa</span></div><div><small>PROCESSAMENTO</small><strong>0%</strong><span>Nenhum livro em fila</span></div></div><div className="admin-grid"><section className="panel admin-action"><span>01</span><h3>Biblioteca</h3><p>Gerencie os livros que alimentam o Content Brain.</p><button onClick={()=>setPage("livros")}>Abrir biblioteca →</button></section><section className="panel admin-action"><span>02</span><h3>Conhecimentos</h3><p>Revise os conhecimentos extraídos dos livros.</p><button onClick={()=>setPage("conhecimentos")}>Ver conhecimentos →</button></section><section className="panel admin-action"><span>03</span><h3>Usuários</h3><p>Controle créditos, planos e status das contas.</p><button onClick={()=>setPage("usuarios")}>Gerenciar usuários →</button></section></div></div>}
@@ -143,7 +156,7 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  const [loading,setLoading]=useState(type==="livros"||type==="processamento");
  const [processing,setProcessing]=useState<string|null>(null);
  const [progress,setProgress]=useState<Record<string,{done:number,total:number}>>({});
- const [message,setMessage]=useState("");
+ const [message,setMessage]=useState(""); const [rows,setRows]=useState<any[]>([]); const [rowsLoading,setRowsLoading]=useState(false);
 
  const loadLivros=async()=>{
    setLoading(true);
@@ -179,7 +192,8 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
    }
  };
 
- useEffect(()=>{ if(type==="livros"||type==="processamento") void loadLivros(); }, [type]);
+ useEffect(()=>{if(type==="livros"||type==="processamento") void loadLivros();if(type==="conhecimentos"||type==="usuarios") void loadRows();},[type]);
+ const loadRows=async()=>{setRowsLoading(true);if(type==="conhecimentos"){const {data,error}=await supabase.from("conhecimentos").select("id,titulo,tipo,tema,relevancia,criado_em,livros(titulo,autor)").order("relevancia",{ascending:false,nullsLast:true}).limit(200);if(error)setMessage(error.message);else setRows(data||[]);}else{const {data,error}=await supabase.from("usuarios").select("id,nome,email,creditos,plano,status,criado_em").order("criado_em",{ascending:false}).limit(200);if(error)setMessage(error.message);else setRows(data||[]);}setRowsLoading(false);};
 
  if(type==="livros"||type==="processamento"){
    return <div className="content">
@@ -207,7 +221,7 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
  }
 
  const cfg={conhecimentos:["CONHECIMENTOS","Base de conhecimento","Revise e organize os conhecimentos extraídos."],usuarios:["USUÁRIOS","Usuários cadastrados","Gerencie contas, créditos e planos."]}[type];
- return <div className="content"><div className="admin-list-head"><div><span className="eyebrow">{cfg[0]}</span><h2>{cfg[1]}</h2><p>{cfg[2]}</p></div><button className="primary-large">Nova ação <b>+</b></button></div><div className="panel table-placeholder"><div className="table-head"><span>NOME</span><span>STATUS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div><div className="empty-row"><span>○</span><div><strong>Nenhum registro para exibir</strong><p>Esta área já está preparada para os dados reais do Supabase.</p></div></div></div></div>;
+ return <div className="content"><div className="admin-list-head"><div><span className="eyebrow">{cfg[0]}</span><h2>{cfg[1]}</h2><p>{cfg[2]}</p></div><button className="primary-large">Nova ação <b>+</b></button></div><div className="panel table-placeholder"><div className="table-head"><span>NOME</span><span>STATUS</span><span>ATUALIZAÇÃO</span><span>AÇÕES</span></div>{rowsLoading?<div className="empty-row"><span>◌</span><div><strong>Carregando...</strong><p>Consultando o Supabase.</p></div></div>:rows.length===0?<div className="empty-row"><span>○</span><div><strong>Nenhum registro para exibir</strong><p>Quando houver dados, eles aparecerão aqui.</p></div></div>:rows.map((r:any)=><div className="table-row" key={r.id}><span><strong>{type==="usuarios"?(r.nome||r.email||"Usuário"):(r.titulo||r.tema||"Conhecimento")}</strong><small>{type==="usuarios"?r.email:(r.livros?.titulo||"Livro não informado")}</small></span><span>{type==="usuarios"?(r.plano+" • "+r.creditos+" créditos"):(r.tipo||"Conhecimento")}</span><span>{r.criado_em?new Date(r.criado_em).toLocaleDateString("pt-BR"):"—"}</span><span>—</span></div>)}</div></div>;
 }
 
 function Landing({open}:{open:(t:"login"|"signup")=>void}) {
@@ -241,7 +255,7 @@ export default function App(){
    return ()=>{active=false;subscription.unsubscribe();};
  },[]);
 
- if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}<button className="dev-preview" onClick={()=>{setMode("user");setPage("dashboard")}}>Pré-visualizar app</button></>;
+ if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}</>;
  if(mode==="admin") return <AdminLayout page={page} setPage={setPage}>{page==="admin"?<Admin setPage={setPage}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
  return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="selecionados"?<Selecionados setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
 }
@@ -286,7 +300,7 @@ function AuthModal({type,close,onEnter}:{type:"login"|"signup";close:()=>void;on
    <label>Senha<input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="••••••••"/></label>
    {error&&<div className="search-error">{error}</div>}
    <button className="btn btn-primary full" disabled={loading} onClick={submit}>{loading?"Entrando...":signup?"Criar conta":"Entrar"} <span>→</span></button>
-   <button className="demo-admin" onClick={async()=>{await supabase.auth.signOut();onEnter(true)}}>Entrar na prévia administrativa</button>
+   {!signup&&<><div className="oauth-divider"><span>ou</span></div><button className="google-login" disabled={loading} onClick={async()=>{setLoading(true);setError("");const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});if(error)setError(error.message);setLoading(false);}}><span className="google-mark">G</span> Continuar com Google</button></>}
    <small>{signup?"Já tem uma conta? ":"Ainda não tem uma conta? "}<button className="switch" onClick={close}>{signup?"Fazer login":"Cadastre-se"}</button></small>
  </div></div>;
 }
