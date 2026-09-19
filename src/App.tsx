@@ -425,6 +425,24 @@ export default function App(){
  const [historyQuery,setHistoryQuery]=useState<string>("");
  const open=(t:"login"|"signup")=>setModal(t);
 
+ const navigate=(next:Page)=>{
+   setPage(next);
+   try{
+     const key=next==="admin"||["livros","processamento","conhecimentos","usuarios"].includes(next)?"content-brain-page-admin":"content-brain-page-user";
+     localStorage.setItem(key,next);
+   }catch{}
+ };
+
+ const storedPage=(isAdmin:boolean):Page=>{
+   try{
+     const key=isAdmin?"content-brain-page-admin":"content-brain-page-user";
+     const saved=localStorage.getItem(key) as Page|null;
+     if(isAdmin && saved && ["admin","livros","processamento","conhecimentos","usuarios"].includes(saved)) return saved;
+     if(!isAdmin && saved && ["dashboard","pesquisa","selecionados","ideias","historico","conta","planos"].includes(saved)) return saved;
+   }catch{}
+   return isAdmin?"admin":"dashboard";
+ };
+
  useEffect(()=>{
    let active=true;
    supabase.auth.getSession().then(async ({data})=>{
@@ -433,21 +451,21 @@ export default function App(){
      if(!active || !userData.user) return;
      const isAdmin=userData.user.app_metadata?.role==="admin";
      setMode(isAdmin?"admin":"user");
-     setPage(isAdmin?"admin":"dashboard");
+     setPage(storedPage(isAdmin));
    });
    const {data:{subscription}}=supabase.auth.onAuthStateChange(async (_event,session)=>{
      if(!active || !session?.user) return;
      const isAdmin=session.user.app_metadata?.role==="admin";
      setMode(isAdmin?"admin":"user");
-     setPage(isAdmin?"admin":"dashboard");
+     setPage(storedPage(isAdmin));
      setModal(null);
    });
    return ()=>{active=false;subscription.unsubscribe();};
  },[]);
 
- if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} switchType={(next)=>setModal(next)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}</>;
- if(mode==="admin") return <AdminLayout page={page} setPage={setPage}>{page==="admin"?<Admin setPage={setPage}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
- return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage} selected={selected} setSelected={setSelected} initialQuery={historyQuery||undefined} autoRun={Boolean(historyQuery)}/>:page==="selecionados"?<Selecionados setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico setPage={setPage} setHistoryQuery={(q)=>setHistoryQuery(q)}/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
+ if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} switchType={(next)=>setModal(next)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");navigate(admin?"admin":"dashboard")}}/>}</>;
+ if(mode==="admin") return <AdminLayout page={page} setPage={navigate}>{page==="admin"?<Admin setPage={navigate}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
+ return <UserLayout page={page} setPage={navigate}>{page==="dashboard"?<Dashboard setPage={navigate}/>:page==="pesquisa"?<Pesquisa setPage={navigate} selected={selected} setSelected={setSelected} initialQuery={historyQuery||undefined} autoRun={Boolean(historyQuery)}/>:page==="selecionados"?<Selecionados setPage={navigate} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={navigate}/>:page==="historico"?<Historico setPage={navigate} setHistoryQuery={(q)=>setHistoryQuery(q)}/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
 }
 
 
