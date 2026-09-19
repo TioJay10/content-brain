@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "./supabaseClient";
 
 const examples=[
   {title:"Princípios fundamentais de vendas",book:"Conhecimento selecionado da biblioteca",tag:"VENDAS"},
@@ -9,6 +10,9 @@ export default function App(){
   const [login,setLogin]=useState(false);
   const [signup,setSignup]=useState(false);
   const open=(type:"login"|"signup")=>{setLogin(type==="login");setSignup(type==="signup")};
+
+  // Testa a conexão com o Supabase ao carregar a aplicação.
+  void supabase.auth.getSession();
 
   return <div className="page">
     <header className="header">
