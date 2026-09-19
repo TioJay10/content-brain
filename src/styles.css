@@ -59,3 +59,6 @@
  .admin-user-actions{justify-content:flex-start}
  .plan-select{flex:1;min-width:120px}
 }
+
+.admin-top-badge{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #e5e3f1;background:#faf9ff;border-radius:10px;color:#635bff;font-size:10px;font-weight:800}
+.admin-top-badge span{font-size:8px}
