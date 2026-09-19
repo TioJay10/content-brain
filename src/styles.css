@@ -1183,3 +1183,25 @@
   border-color:#5149d8 !important;
   color:#a49cff !important;
 }
+
+/* USUÁRIOS — ADICIONAR USUÁRIO E PLANO GRATUITO NO MODO NOTURNO */
+:root[data-theme="dark"] .admin-list-head .btn-primary{
+  background:#202027 !important;
+  border-color:#393944 !important;
+  color:#d0cfd7 !important;
+  box-shadow:none !important;
+}
+:root[data-theme="dark"] .admin-list-head .btn-primary:hover{
+  background:#292932 !important;
+  border-color:#5149d8 !important;
+  color:#a49cff !important;
+}
+:root[data-theme="dark"] .table-placeholder .admin-user-actions .plan-select{
+  background:#202027 !important;
+  border-color:#393944 !important;
+  color:#d0cfd7 !important;
+}
+:root[data-theme="dark"] .table-placeholder .admin-user-actions .plan-select:focus{
+  border-color:#5149d8 !important;
+  outline:none;
+}
