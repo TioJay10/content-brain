@@ -292,3 +292,10 @@
   box-shadow:none!important;
   opacity:.88;
 }
+
+/* BIBLIOTECA — cadastro de livros */
+.admin-list-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
+.admin-add-book{white-space:nowrap}
+.book-modal input[type="file"]{padding:10px;background:#fafaff;border:1px dashed #cfcddf;cursor:pointer}
+.book-file-name{font-size:11px;color:#777783;background:#f8f7ff;border:1px solid #e5e3f1;border-radius:8px;padding:10px 12px;margin:2px 0 6px;line-height:1.5}
+.book-file-name b{color:#45434f}
