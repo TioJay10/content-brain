@@ -1102,3 +1102,14 @@
   .theme-icon{font-size:17px;}
   .topbar:has(.admin-top-badge) .theme-toggle{flex:0 0 38px;}
 }
+
+
+/* CONTROLE DE TEMA NO MENU */
+.mobile-theme-toggle{display:none;}
+@media(max-width:700px){
+  .mobile-theme-toggle{display:flex;align-items:center;gap:10px;width:calc(100% - 32px);min-height:44px;margin:12px 16px 4px;padding:0 2px;border:0;background:transparent;color:#77747f;font-size:12px;font-weight:600;text-align:left;cursor:pointer;}
+  .mobile-theme-toggle span{display:grid;place-items:center;width:25px;height:25px;border:1px solid #dddbe4;border-radius:50%;font-size:15px;}
+  .mobile-theme-toggle:active{color:#5b53ed;}
+}
+:root[data-theme="dark"] .mobile-theme-toggle{color:#92919d;}
+:root[data-theme="dark"] .mobile-theme-toggle span{border-color:#3b3b43;color:#aaa8b5;}
