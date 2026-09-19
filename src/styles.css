@@ -1146,16 +1146,19 @@
 }
 
 
-/* MODAL DE CADASTRO — BOTÕES ACOMPANHAM O MODO NOTURNO */
+/* MODAL DE CADASTRO — BOTÃO PRINCIPAL ESCURO NO MODO NOTURNO */
+:root[data-theme="dark"] .admin-user-modal .btn-primary,
 :root[data-theme="dark"] .admin-user-modal .btn-outline,
 :root[data-theme="dark"] .admin-user-modal button:not(.close){
-  background:#202027;
-  border-color:#393944;
-  color:#d0cfd7;
+  background:#202027 !important;
+  border-color:#393944 !important;
+  color:#d0cfd7 !important;
+  box-shadow:none !important;
 }
+:root[data-theme="dark"] .admin-user-modal .btn-primary:hover,
 :root[data-theme="dark"] .admin-user-modal .btn-outline:hover,
 :root[data-theme="dark"] .admin-user-modal button:not(.close):hover{
-  background:#292932;
-  border-color:#5149d8;
-  color:#a49cff;
+  background:#292932 !important;
+  border-color:#5149d8 !important;
+  color:#a49cff !important;
 }
