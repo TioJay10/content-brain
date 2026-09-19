@@ -912,3 +912,38 @@
   .mobile-admin-logout:active{background:#f5f3ff;color:#5149d8;}
   .sidebar.mobile-open .sidebar-user{display:none;}
 }
+
+/* SAIR — AÇÃO DISCRETA / PREMIUM */
+@media(max-width:700px){
+  .mobile-admin-logout{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:9px;
+    width:calc(100% - 32px);
+    min-height:42px;
+    margin:12px 16px 6px;
+    padding:0 2px;
+    border:0;
+    background:transparent;
+    color:#77747f;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.05px;
+    box-shadow:none;
+  }
+  .mobile-admin-logout span{
+    display:grid;
+    place-items:center;
+    width:25px;
+    height:25px;
+    font-size:16px;
+    line-height:1;
+    color:#8d8996;
+    border:1px solid #dddbe4;
+    border-radius:50%;
+  }
+  .mobile-admin-logout:hover{background:transparent;color:#4f4b58;}
+  .mobile-admin-logout:hover span{color:#5b53ed;border-color:#c9c5ed;}
+  .mobile-admin-logout:active{background:transparent;color:#4f4b58;transform:translateX(1px);}
+}
