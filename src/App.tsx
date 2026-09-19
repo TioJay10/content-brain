@@ -48,10 +48,10 @@ function SideNav({ page, setPage, admin = false }: { page: Page; setPage: (p: Pa
   </aside>;
 }
 
-function Topbar({ title, setPage }: { title: string; setPage: (p:Page)=>void }) {
+function Topbar({ title, setPage, admin=false }: { title: string; setPage: (p:Page)=>void; admin?: boolean }) {
   const [creditos,setCreditos]=useState(20);
-  useEffect(()=>{(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[]);
-  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div><button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button></header>;
+  useEffect(()=>{if(admin)return;(async()=>{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data}=await supabase.from("usuarios").select("creditos,plano,plano_expira_em").eq("id",user.id).maybeSingle();if(data)setCreditos(data.creditos??0);})()},[admin]);
+  return <header className="topbar"><div><div className="breadcrumb">CONTENT BRAIN / <span>{title.toUpperCase()}</span></div><h1>{title}</h1></div>{admin?<div className="admin-top-badge"><span>●</span> Administrador</div>:<button className="credit-pill" onClick={()=>setPage("planos")}><span className="credit-icon">✦</span><span><b>{creditos}</b> créditos</span><i>Adicionar</i></button>}</header>;
 }
 
 function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:ReactNode}) {
@@ -61,7 +61,7 @@ function UserLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>vo
 
 function AdminLayout({ page, setPage, children }: {page:Page;setPage:(p:Page)=>void;children:React.ReactNode}) {
   const titles: Record<string,string> = {admin:"Visão geral",livros:"Biblioteca",processamento:"Processamento",conhecimentos:"Conhecimentos",usuarios:"Usuários"};
-  return <div className="app-shell"><SideNav page={page} setPage={setPage} admin/><main className="workspace"><Topbar title={titles[page] || "Administração"} setPage={setPage}/>{children}</main></div>;
+  return <div className="app-shell"><SideNav page={page} setPage={setPage} admin/><main className="workspace"><Topbar title={titles[page] || "Administração"} setPage={setPage} admin/>{children}</main></div>;
 }
 
 function Dashboard({setPage}:{setPage:(p:Page)=>void}) {
