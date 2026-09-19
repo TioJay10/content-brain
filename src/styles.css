@@ -329,3 +329,39 @@
  .selected-action-buttons button{flex:1 1 auto}
  .knowledge-card.selected{padding-right:48px}
 }
+
+
+/* PESQUISA — refinamento de usabilidade */
+.search-page-head{align-items:stretch}
+.search-input-large{display:flex;align-items:center;flex:1;background:#fff;border:1px solid #dedde7;border-radius:11px;padding:0 12px;min-height:46px;transition:border-color .15s ease,box-shadow .15s ease}
+.search-input-large:focus-within{border-color:#bdb8ff;box-shadow:0 0 0 3px #635bff10}
+.search-input-large>span{font-size:19px;color:#9a97a8;margin-right:8px}
+.search-input-large input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:12px;color:#303039}
+.search-input-large input::placeholder{color:#aaa8b3}
+.search-input-large button{width:28px;height:28px;display:grid;place-items:center;border-radius:7px;cursor:pointer;margin-left:6px}
+.search-input-large button:hover{background:#f4f3f8;color:#55515f}
+.search-page-head>.primary-large{min-width:105px;white-space:nowrap}
+.search-error{margin:0 0 15px;padding:11px 13px;border:1px solid #f0d3d6;background:#fff7f7;color:#a64a55;border-radius:9px;font-size:11px;line-height:1.5}
+.search-empty{background:#fff;border:1px dashed #dddde5;border-radius:14px;padding:64px 24px;text-align:center}
+.search-empty .empty-mark{margin-bottom:16px}
+.search-empty h2{font-size:20px;margin:0 0 8px}
+.search-empty p{max-width:470px;margin:0 auto;color:#85858f;font-size:12px;line-height:1.6}
+.search-empty + .results-list{margin-top:0}
+.results-toolbar>span{color:#777480}
+@media(max-width:700px){
+ .search-page-head{flex-direction:column;gap:9px;margin-bottom:18px}
+ .search-input-large{width:100%;min-height:48px}
+ .search-page-head>.primary-large{width:100%;min-height:44px}
+ .results-toolbar{align-items:flex-start;gap:10px}
+ .results-toolbar>span{line-height:1.4}
+ .results-tools{flex-shrink:0}
+ .results-toolbar button{padding:8px 9px}
+ .knowledge-card{padding:17px 38px 17px 42px}
+ .knowledge-card .check{left:13px;top:17px}
+ .knowledge-card .card-arrow{right:13px;top:17px}
+ .knowledge-main h3{font-size:15px;line-height:1.35}
+ .excerpt{font-size:12px}
+ .search-empty{padding:52px 20px}
+ .selection-bar{bottom:10px;gap:10px}
+ .selection-bar span{line-height:1.4}
+}
