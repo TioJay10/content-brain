@@ -179,8 +179,9 @@ function AdminList({type}:{type:"livros"|"processamento"|"conhecimentos"|"usuari
    }
  };
 
+ useEffect(()=>{ if(type==="livros"||type==="processamento") void loadLivros(); }, [type]);
+
  if(type==="livros"||type==="processamento"){
-   useEffect(()=>{ void loadLivros(); }, []);
    return <div className="content">
      <div className="admin-list-head">
        <div><span className="eyebrow">{type==="livros"?"BIBLIOTECA":"PROCESSAMENTO"}</span><h2>{type==="livros"?"Livros cadastrados":"Fila de processamento"}</h2><p>{type==="livros"?"Seu acervo de livros alimenta a base do Content Brain.":"Processe os livros em lotes de até 25 páginas."}</p></div>
@@ -218,13 +219,75 @@ export default function App(){
  const [page,setPage]=useState<Page>("dashboard");
  const [modal,setModal]=useState<"login"|"signup"|null>(null);
  const [selected,setSelected]=useState<Knowledge[]>([]);
- void supabase.auth.getSession();
  const open=(t:"login"|"signup")=>setModal(t);
+
+ useEffect(()=>{
+   let active=true;
+   supabase.auth.getSession().then(async ({data})=>{
+     if(!active || !data.session) return;
+     const {data:userData}=await supabase.auth.getUser();
+     if(!active || !userData.user) return;
+     const isAdmin=userData.user.app_metadata?.role==="admin";
+     setMode(isAdmin?"admin":"user");
+     setPage(isAdmin?"admin":"dashboard");
+   });
+   const {data:{subscription}}=supabase.auth.onAuthStateChange(async (_event,session)=>{
+     if(!active || !session?.user) return;
+     const isAdmin=session.user.app_metadata?.role==="admin";
+     setMode(isAdmin?"admin":"user");
+     setPage(isAdmin?"admin":"dashboard");
+     setModal(null);
+   });
+   return ()=>{active=false;subscription.unsubscribe();};
+ },[]);
+
  if(mode==="landing") return <><Landing open={open}/>{modal&&<AuthModal type={modal} close={()=>setModal(null)} onEnter={(admin)=>{setModal(null);setMode(admin?"admin":"user");setPage(admin?"admin":"dashboard")}}/>}<button className="dev-preview" onClick={()=>{setMode("user");setPage("dashboard")}}>Pré-visualizar app</button></>;
  if(mode==="admin") return <AdminLayout page={page} setPage={setPage}>{page==="admin"?<Admin setPage={setPage}/>:<AdminList type={page as "livros"|"processamento"|"conhecimentos"|"usuarios"}/>}</AdminLayout>;
  return <UserLayout page={page} setPage={setPage}>{page==="dashboard"?<Dashboard setPage={setPage}/>:page==="pesquisa"?<Pesquisa setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="selecionados"?<Selecionados setPage={setPage} selected={selected} setSelected={setSelected}/>:page==="ideias"?<Ideas setPage={setPage}/>:page==="historico"?<Historico/>:page==="conta"?<Conta/>:<Planos/>}</UserLayout>;
 }
 
+
 function AuthModal({type,close,onEnter}:{type:"login"|"signup";close:()=>void;onEnter:(admin:boolean)=>void}){
- const signup=type==="signup"; return <div className="modal-backdrop" onClick={close}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={close}>×</button><div className="modal-logo"><span>content</span><strong>brain</strong></div><h2>{signup?"Crie sua conta":"Bem-vindo de volta"}</h2><p>{signup?"Comece com 20 créditos gratuitos.":"Entre para continuar sua pesquisa."}</p>{signup&&<label>Nome<input placeholder="Seu nome"/></label>}<label>E-mail<input type="email" placeholder="seu@email.com"/></label><label>Senha<input type="password" placeholder="••••••••"/></label><button className="btn btn-primary full" onClick={()=>onEnter(false)}>{signup?"Criar conta":"Entrar"} <span>→</span></button><button className="demo-admin" onClick={()=>onEnter(true)}>Entrar na prévia administrativa</button><small>{signup?"Já tem uma conta? ":"Ainda não tem uma conta? "}<button className="switch" onClick={close}>{signup?"Fazer login":"Cadastre-se"}</button></small></div></div>;
+ const signup=type==="signup";
+ const [email,setEmail]=useState("");
+ const [password,setPassword]=useState("");
+ const [nome,setNome]=useState("");
+ const [error,setError]=useState("");
+ const [loading,setLoading]=useState(false);
+
+ const submit=async()=>{
+   setLoading(true); setError("");
+   try {
+     if(signup){
+       const {data,error}=await supabase.auth.signUp({email,password,options:{data:{nome}}});
+       if(error) throw error;
+       if(data.session){
+         onEnter(data.user?.app_metadata?.role==="admin");
+       } else {
+         setError("Conta criada. Se a confirmação de e-mail estiver ativa, confirme seu e-mail antes de entrar.");
+       }
+     } else {
+       const {data,error}=await supabase.auth.signInWithPassword({email,password});
+       if(error) throw error;
+       onEnter(data.user?.app_metadata?.role==="admin");
+     }
+   } catch(e:any) {
+     setError(e?.message||"Não foi possível concluir o acesso.");
+   } finally { setLoading(false); }
+ };
+
+ return <div className="modal-backdrop" onClick={close}><div className="modal" onClick={e=>e.stopPropagation()}>
+   <button className="close" onClick={close}>×</button>
+   <div className="modal-logo"><span>content</span><strong>brain</strong></div>
+   <h2>{signup?"Crie sua conta":"Bem-vindo de volta"}</h2>
+   <p>{signup?"Comece com 20 créditos gratuitos.":"Entre para continuar sua pesquisa."}</p>
+   {signup&&<label>Nome<input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Seu nome"/></label>}
+   <label>E-mail<input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="seu@email.com"/></label>
+   <label>Senha<input value={password} onChange={e=>setPassword(e.target.value)} type="password" placeholder="••••••••"/></label>
+   {error&&<div className="search-error">{error}</div>}
+   <button className="btn btn-primary full" disabled={loading} onClick={submit}>{loading?"Entrando...":signup?"Criar conta":"Entrar"} <span>→</span></button>
+   <button className="demo-admin" onClick={async()=>{await supabase.auth.signOut();onEnter(true)}}>Entrar na prévia administrativa</button>
+   <small>{signup?"Já tem uma conta? ":"Ainda não tem uma conta? "}<button className="switch" onClick={close}>{signup?"Fazer login":"Cadastre-se"}</button></small>
+ </div></div>;
 }
+
