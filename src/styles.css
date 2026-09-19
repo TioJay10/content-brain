@@ -181,3 +181,114 @@
 }
 .credit-add-group{background:#fff!important;border:1px solid #d7d3ff!important;box-shadow:0 4px 12px #635bff14!important}
 .credit-add-group:focus-within{border-color:#8a82ff!important;box-shadow:0 0 0 3px #635bff16,0 5px 14px #635bff20!important}
+
+
+/* AJUSTE FINAL — ADMIN: VISUAL LIMPO, LEVE E SEM MUDANÇA DE COR NO HOVER */
+.admin-user-actions .credit-minus,
+.admin-user-actions .credit-plus,
+.admin-user-actions .credit-add-button,
+.admin-user-actions .user-delete-button{
+  position:relative;
+  overflow:visible;
+  border:1px solid transparent!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:none!important;
+  transition:opacity .15s ease, border-color .15s ease!important;
+}
+.admin-user-actions .credit-minus:before,
+.admin-user-actions .credit-plus:before,
+.admin-user-actions .credit-add-button:before,
+.admin-user-actions .user-status-button:before,
+.admin-user-actions .user-delete-button:before{
+  display:none!important;
+}
+.admin-user-actions .credit-minus{
+  background:#fff5f5!important;
+  color:#c84b55!important;
+  border-color:#f0cfd2!important;
+}
+.admin-user-actions .credit-plus{
+  background:#f5f4ff!important;
+  color:#554bd8!important;
+  border-color:#dcd9ff!important;
+}
+.admin-user-actions .credit-add-button{
+  background:#635bff!important;
+  color:#fff!important;
+  border-color:#635bff!important;
+  box-shadow:0 2px 5px #635bff18!important;
+}
+.admin-user-actions .user-delete-button{
+  background:#fff5f5!important;
+  color:#c84b55!important;
+  border-color:#f0cfd2!important;
+}
+.admin-user-actions .plan-select{
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.admin-user-actions .credit-minus:hover:not(:disabled),
+.admin-user-actions .credit-plus:hover:not(:disabled),
+.admin-user-actions .credit-add-button:hover:not(:disabled),
+.admin-user-actions .user-delete-button:hover:not(:disabled){
+  transform:none!important;
+  filter:none!important;
+  box-shadow:none!important;
+  opacity:.88;
+}
+.admin-user-actions .credit-minus:active:not(:disabled),
+.admin-user-actions .credit-plus:active:not(:disabled),
+.admin-user-actions .credit-add-button:active:not(:disabled),
+.admin-user-actions .user-delete-button:active:not(:disabled){
+  transform:none!important;
+  box-shadow:none!important;
+}
+
+/* STATUS: somente Bloquear/Ativar muda de cor conforme o estado */
+.admin-user-actions .user-status-button{
+  position:relative;
+  overflow:visible;
+  border:1px solid transparent!important;
+  height:32px!important;
+  min-width:64px!important;
+  border-radius:8px!important;
+  font-weight:800!important;
+  box-shadow:none!important;
+  transform:none!important;
+  filter:none!important;
+  transition:opacity .15s ease,background .15s ease,border-color .15s ease!important;
+}
+.admin-user-actions .user-status-button:before{display:none!important}
+
+/* usuário ativo → botão Bloquear vermelho */
+.admin-user-actions .user-status-button{
+  background:#fff1f2!important;
+  color:#c83f4c!important;
+  border-color:#efc6cb!important;
+}
+.admin-user-actions .user-status-button:hover:not(:disabled){
+  background:#fff1f2!important;
+  color:#c83f4c!important;
+  border-color:#efc6cb!important;
+  transform:none!important;
+  filter:none!important;
+  box-shadow:none!important;
+  opacity:.88;
+}
+
+/* usuário bloqueado → botão Ativar verde */
+.admin-user-actions .user-status-button[data-action="ativar"]{
+  background:#ecfaf4!important;
+  color:#16845c!important;
+  border-color:#bfe8d5!important;
+}
+.admin-user-actions .user-status-button[data-action="ativar"]:hover:not(:disabled){
+  background:#ecfaf4!important;
+  color:#16845c!important;
+  border-color:#bfe8d5!important;
+  transform:none!important;
+  filter:none!important;
+  box-shadow:none!important;
+  opacity:.88;
+}
